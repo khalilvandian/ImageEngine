@@ -18,11 +18,11 @@ def _():
     import os
     import glob
     import csv
-    return cv2, csv, face_recognition, glob, np, os
+    return csv, cv2, face_recognition, glob, os
 
 
 @app.cell
-def _(cv2, csv, face_recognition, glob, os):
+def _(csv, cv2, face_recognition, glob, os):
 
 
     # =================================================================
@@ -35,7 +35,7 @@ def _(cv2, csv, face_recognition, glob, os):
 
     # --- 2. Input/Output Image Settings (The image to analyze) ---
     INPUT_IMAGE_DIR = "Images/Lapresse/"
-    OUTPUT_DIR = "output_lapress_hugh_jackman_detection"
+    OUTPUT_DIR = "output_lapress_hugh_jackman_detection_cnn"
     RESULTS_FILE = "lapress_hugh_jackman_detection_results.csv"
 
     # --- 3. Model/Tolerance Settings ---
@@ -82,7 +82,7 @@ def _(cv2, csv, face_recognition, glob, os):
         visual_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         # Find all face locations and face encodings in the image
-        face_locations = face_recognition.face_locations(image)
+        face_locations = face_recognition.face_locations(image, number_of_times_to_upsample=1, model="cnn")
         face_encodings = face_recognition.face_encodings(image, face_locations)
 
         celebrity_found = False
@@ -134,7 +134,7 @@ def _(cv2, csv, face_recognition, glob, os):
 
     # Get all image files from the input directory
     image_files = glob.glob(os.path.join(INPUT_IMAGE_DIR, "**/*.jpg"), recursive=True)
-    
+
     if not image_files:
         print(f"No image files found in {INPUT_IMAGE_DIR}")
     else:

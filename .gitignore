@@ -4,3 +4,17 @@ Images/
 output_hugh_jackman_detection/
 output_lapress_hugh_jackman_detection/
 venv/
+logs/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.sqlite3
+.DS_Store
+.idea/
+.vscode/
+.ipynb_checkpoints/
+.env
+*.log
+output_lapress_hugh_jackman_detection_cnn/
+layouts/
