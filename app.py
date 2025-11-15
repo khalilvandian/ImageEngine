@@ -185,5 +185,106 @@ def _(classify, classify_button, mo):
     return
 
 
+@app.cell
+def _(mo):
+    mo.md(r"""## Model Testing""")
+    return
+
+
+@app.cell
+def _(mo):
+    model_to_test = mo.ui.dropdown(
+        ["face_recognition_cnn", "face_recognition_hog", "vit_b32"],
+        value="face_recognition_cnn",
+        label="Select Model to Test"
+    )
+    test_config_path = mo.ui.text(
+        value="test_config.json",
+        label="Path to Test Config JSON"
+    )
+    run_tests_button = mo.ui.run_button(label="Run Tests")
+    return model_to_test, run_tests_button, test_config_path
+
+
+@app.cell
+def _(mo, model_to_test, run_tests_button, test_config_path):
+    mo.vstack(
+        [
+            model_to_test,
+            test_config_path,
+            run_tests_button,
+        ]
+    )
+    return
+
+
+@app.cell
+def _(
+    celebrities_json_path,
+    get_classifier,
+    load_celebrities_from_json,
+    logger,
+    mo,
+    model_to_test,
+    run_tests_button,
+    test_config_path,
+):
+    def run_tests():
+        from metrics import load_test_config, load_test_set, run_classification_on_test_set, calculate_metrics, plot_confusion_matrix, plot_roc_curve
+
+        logger.info("Starting model testing process.")
+
+        # Load test config
+        test_config = load_test_config(test_config_path.value)
+        if not test_config:
+            logger.error("Could not load test config.")
+            mo.output.append(mo.md("### <font color='red'>Error</font>\nCould not load test config."))
+            return
+
+        # Load test set
+        image_paths, ground_truth_labels = load_test_set(test_config["test_set_json_path"])
+        logger.info(f"Loaded {len(image_paths)} images for testing.")
+
+        # Load celebrity data
+        celebrity_data = load_celebrities_from_json(celebrities_json_path.value)
+        if not celebrity_data:
+            logger.error("No celebrity data loaded from JSON. Check path and content.")
+            mo.output.append(mo.md("### <font color='red'>Error</font>\nNo celebrity data loaded from JSON. Check path and content."))
+            return
+
+        # Get classifier
+        classifier = get_classifier(model_to_test.value, celebrity_data)
+        if classifier is None:
+            logger.error(f"Could not initialize classifier: {model_to_test.value}. Check logs for details.")
+            mo.output.append(mo.md(f"### <font color='red'>Error</font>\nCould not initialize classifier: {model_to_test.value}. Check logs for details."))
+            return
+
+        # Run classification
+        predictions = run_classification_on_test_set(classifier, image_paths)
+
+        # Calculate metrics
+        metrics = calculate_metrics(ground_truth_labels, predictions)
+        logger.info(f"Calculated metrics: {metrics}")
+
+        # Display metrics
+        mo.output.append(mo.md("### Test Results"))
+        for metric, value in metrics.items():
+            mo.output.append(mo.md(f"**{metric.replace('_', ' ').title()}**: {value}"))
+
+        # Generate and display confusion matrix
+        confusion_matrix_base64 = plot_confusion_matrix(ground_truth_labels, predictions)
+        mo.output.append(mo.md("### Confusion Matrix"))
+        mo.output.append(mo.image(src=f"data:image/png;base64,{confusion_matrix_base64}"))
+
+        # Generate and display ROC curve
+        roc_curve_base64 = plot_roc_curve(ground_truth_labels, predictions)
+        mo.output.append(mo.md("### ROC Curve"))
+        mo.output.append(mo.image(src=f"data:image/png;base64,{roc_curve_base64}"))
+
+    if run_tests_button.value:
+        run_tests()
+    return
+
+
 if __name__ == "__main__":
     app.run()

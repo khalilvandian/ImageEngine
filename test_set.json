@@ -1,0 +1,12 @@
+[
+    {
+        "image_name": "LP_3040938.jpg",
+        "path": "Images/Hugh Jackman Testset/1/LP_3040938.jpg",
+        "labels": ["Hugh Jackman"]
+    },
+    {
+        "image_name": "LP_23860044.jpg",
+        "path": "Images/Hugh Jackman Testset/0/LP_23860044.jpg",
+        "labels": []
+    }
+]
