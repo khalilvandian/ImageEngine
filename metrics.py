@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import io
 import base64
+import pandas as pd
+import datetime
 
 def load_test_set(json_path):
     """
@@ -126,6 +128,33 @@ def plot_roc_curve(ground_truth_labels, predictions):
     plt.savefig(buf, format='png', bbox_inches='tight')
     plt.close()
     return base64.b64encode(buf.getvalue()).decode('utf-8')
+
+def save_test_output_to_csv(image_paths, predictions, ground_truth_labels, model_name, output_dir="test_outputs"):
+    """
+    Saves the test output to a CSV file.
+
+    Args:
+        image_paths (list): A list of image paths.
+        predictions (list): A list of predicted labels.
+        ground_truth_labels (list): A list of ground truth labels.
+        model_name (str): The name of the model being tested.
+        output_dir (str): The directory to save the CSV file in.
+    """
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"{model_name}_{timestamp}.csv"
+    filepath = os.path.join(output_dir, filename)
+
+    df = pd.DataFrame({
+        "image_path": image_paths,
+        "predicted_label": predictions,
+        "true_label": ground_truth_labels
+    })
+
+    df.to_csv(filepath, index=False)
+    return filepath
 
 def load_test_config(config_path):
     """

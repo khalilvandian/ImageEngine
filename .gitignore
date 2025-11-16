@@ -18,3 +18,7 @@ __pycache__/
 *.log
 output_lapress_hugh_jackman_detection_cnn/
 layouts/
+cuda_docker_test/Dockerfile
+cuda_docker_test/intensive_test.py
+cuda_docker_test/test_face_recognition.py
+cuda_docker_test/test_image.jpg

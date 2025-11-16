@@ -341,7 +341,8 @@ def get_classifier(classifier_type, celebrity_data):
             return None
         return ViTClassifier(
             name="vit_b32",
-            celebrity_data=celebrity_data
+            celebrity_data=celebrity_data,
+            threshold=0.6
         )
     else:
         logger.error(f"Unknown classifier type: {classifier_type}")
