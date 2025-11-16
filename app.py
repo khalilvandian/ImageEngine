@@ -230,7 +230,7 @@ def _(
     test_config_path,
 ):
     def run_tests():
-        from metrics import load_test_config, load_test_set, run_classification_on_test_set, calculate_metrics, plot_confusion_matrix, plot_roc_curve
+        from metrics import load_test_config, load_test_set, run_classification_on_test_set, calculate_metrics, plot_confusion_matrix, plot_roc_curve, save_test_output_to_csv
 
         logger.info("Starting model testing process.")
 
@@ -266,10 +266,16 @@ def _(
         metrics = calculate_metrics(ground_truth_labels, predictions)
         logger.info(f"Calculated metrics: {metrics}")
 
+        # Save test output to CSV
+        csv_filepath = save_test_output_to_csv(image_paths, predictions, ground_truth_labels, model_to_test.value)
+        logger.info(f"Test output saved to {csv_filepath}")
+
         # Display metrics
         mo.output.append(mo.md("### Test Results"))
         for metric, value in metrics.items():
             mo.output.append(mo.md(f"**{metric.replace('_', ' ').title()}**: {value}"))
+        
+        mo.output.append(mo.md(f"**Test output saved to**: [{csv_filepath}]({csv_filepath})"))
 
         # Generate and display confusion matrix
         confusion_matrix_base64 = plot_confusion_matrix(ground_truth_labels, predictions)
