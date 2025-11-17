@@ -1,0 +1,11 @@
+marimo
+face_recognition
+dlib
+torch
+timm
+numpy
+scikit-learn
+matplotlib
+pandas
+Pillow
+seaborn
