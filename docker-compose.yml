@@ -1,0 +1,15 @@
+services:
+  image-engine:
+    build: .
+    image: image-engine
+    volumes:
+      - .:/app
+    ports:
+      - "2718:2718"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

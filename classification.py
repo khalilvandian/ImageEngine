@@ -216,8 +216,12 @@ class ViTClassifier(Classifier):
         logger.info(f"Initializing ViTClassifier with threshold: {threshold}")
         self.threshold = threshold
         
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        logger.info(f"ViTClassifier will use device: {self.device}")
+
         logger.info(f"Loading ViT model for '{self.name}'...")
         self.model = timm.create_model('vit_base_patch32_224_in21k', pretrained=True)
+        self.model.to(self.device)
         self.model.eval()
         data_config = timm.data.resolve_data_config({}, model=self.model)
         self.transform = timm.data.create_transform(**data_config)
@@ -243,11 +247,11 @@ class ViTClassifier(Classifier):
 
     def _get_embedding(self, face_image_pil):
         logger.info("Generating embedding for face image.")
-        img_tensor = self.transform(face_image_pil).unsqueeze(0)
+        img_tensor = self.transform(face_image_pil).unsqueeze(0).to(self.device)
         with torch.no_grad():
             embedding = self.model.forward_features(img_tensor)
             embedding = embedding[:, 0]
-        return embedding.numpy().flatten()
+        return embedding.cpu().numpy().flatten()
 
     def _generate_reference_embedding(self, reference_image_path):
         try:

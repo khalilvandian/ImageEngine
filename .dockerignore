@@ -1,0 +1,16 @@
+.git
+.gitignore
+__pycache__
+venv
+concettiComputerVision/
+layouts/
+logs/
+output_hugh_jackman_detection/
+output_lapress_hugh_jackman_detection/
+output_lapress_hugh_jackman_detection_cnn/
+test_outputs/
+*.ipynb
+*.md
+__marimo__/
+cuda_docker_test/
+.idea/
