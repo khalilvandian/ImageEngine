@@ -8,6 +8,10 @@ import io
 import base64
 import pandas as pd
 import datetime
+from image_utils import draw_bounding_boxes
+from logging_utils import setup_logger
+
+logger = setup_logger()
 
 def load_test_set(json_path):
     """
@@ -37,24 +41,46 @@ def load_test_set(json_path):
 
     return image_paths, ground_truth_labels
 
-def run_classification_on_test_set(classifier, image_paths):
+def run_classification_on_test_set(classifier, image_paths, output_image_dir=None):
     """
     Runs classification on the test set and returns the predictions.
+    Optionally saves annotated images to a specified directory.
 
     Args:
         classifier: An instance of a Classifier.
         image_paths (list): A list of image paths.
+        output_image_dir (str, optional): Directory to save annotated images. Defaults to None.
 
     Returns:
         list: A list of predictions (1 for positive, 0 for negative).
     """
     predictions = []
+    
+    # If output_image_dir is provided, create a unique subdirectory for this test run
+    if output_image_dir:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        experiment_folder_name = f"{timestamp}_{classifier.name}_test_tolerance_{getattr(classifier, 'tolerance', 'N-A')}_threshold_{getattr(classifier, 'threshold', 'N-A')}"
+        full_output_dir = os.path.join(output_image_dir, experiment_folder_name)
+        os.makedirs(full_output_dir, exist_ok=True)
+        logger.info(f"Test output images will be saved to: {full_output_dir}")
+
     for image_path in image_paths:
-        result = classifier.detect_celebrity(image_path)
-        if "Hugh Jackman" in result:
+        results = classifier.detect_celebrity(image_path)
+        # Extract names from the list of result dictionaries
+        detected_names = [result['name'] for result in results]
+        if "Hugh Jackman" in detected_names:
             predictions.append(1)
         else:
             predictions.append(0)
+        
+        # Save annotated image if output_image_dir is provided
+        if output_image_dir:
+            annotated_image = draw_bounding_boxes(image_path, results)
+            filename = os.path.basename(image_path)
+            output_path = os.path.join(full_output_dir, filename)
+            annotated_image.save(output_path)
+            logger.info(f"Saved annotated test image to {output_path}")
+
     return predictions
 
 def calculate_metrics(ground_truth_labels, predictions):
