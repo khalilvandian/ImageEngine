@@ -16,6 +16,7 @@ def _():
     import os
     import datetime
     from classification import get_classifier, load_celebrities_from_json
+    from image_utils import draw_bounding_boxes
     import tempfile
     from logging_utils import setup_logger
     return (
@@ -79,6 +80,8 @@ def _(input_type, mo):
 def _(
     celebrities_json_path,
     classifier_type,
+    datetime,
+    draw_bounding_boxes,
     file_selector,
     get_classifier,
     input_type,
@@ -110,6 +113,23 @@ def _(
         if not isinstance(raw_results, (list, tuple)):
             raw_results = [raw_results]
 
+        classifier = get_classifier(
+            classifier_type.value,
+            celebrity_data
+        )
+
+        if classifier is None:
+            logger.error(f"Could not initialize classifier: {classifier_type.value}. Check logs for details.")
+            mo.output.append(mo.md(f"### <font color='red'>Error</font>\nCould not initialize classifier: {classifier_type.value}. Check logs for details."))
+            return {}
+
+        # Create a unique output directory for this experiment
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        experiment_folder_name = f"{timestamp}_{classifier.name}_tolerance_{getattr(classifier, 'tolerance', 'N-A')}_threshold_{getattr(classifier, 'threshold', 'N-A')}"
+        output_dir = os.path.join("image_outputs", experiment_folder_name)
+        os.makedirs(output_dir, exist_ok=True)
+        logger.info(f"Output images will be saved to: {output_dir}")
+
         # Create temporary files to get paths, as the model expects paths.
         with tempfile.TemporaryDirectory() as tempdir:
             image_paths = []
@@ -127,17 +147,15 @@ def _(
 
             logger.info(f"Temporary image paths: {image_paths}")
 
-            classifier = get_classifier(
-                classifier_type.value,
-                celebrity_data
-            )
-
-            if classifier is None:
-                logger.error(f"Could not initialize classifier: {classifier_type.value}. Check logs for details.")
-                mo.output.append(mo.md(f"### <font color='red'>Error</font>\nCould not initialize classifier: {classifier_type.value}. Check logs for details."))
-                return {}
-
             output_by_path = classifier.classify_images(image_paths)
+
+            # Draw bounding boxes and save images
+            for image_path, results in output_by_path.items():
+                annotated_image = draw_bounding_boxes(image_path, results)
+                original_filename = path_to_name[image_path]
+                output_path = os.path.join(output_dir, original_filename)
+                annotated_image.save(output_path)
+                logger.info(f"Saved annotated image to {output_path}")
 
             output_by_name = {path_to_name[path]: labels for path, labels in output_by_path.items()}
 
@@ -178,10 +196,13 @@ def _(classify, classify_button, mo):
     if classify_button.value:
         _output = mo.md("## Classification Results")
         op = classify()
-        for path, labels in op.items():
+        for path, results in op.items():
             mo.output.append(mo.md(f"**{path}**"))
-            for label in labels:
-                mo.output.append(mo.md(f"- {label}"))
+            if results:
+                for result in results:
+                    mo.output.append(mo.md(f"- **{result['name']}** at location {result['location']}"))
+            else:
+                mo.output.append(mo.md("- No celebrities detected."))
     return
 
 
@@ -260,7 +281,7 @@ def _(
             return
 
         # Run classification
-        predictions = run_classification_on_test_set(classifier, image_paths)
+        predictions = run_classification_on_test_set(classifier, image_paths, output_image_dir="image_outputs")
 
         # Calculate metrics
         metrics = calculate_metrics(ground_truth_labels, predictions)

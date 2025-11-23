@@ -16,6 +16,7 @@ from abc import ABC, abstractmethod
 import os
 import face_recognition
 from logging_utils import setup_logger
+import numpy as np
 
 logger = setup_logger()
 
@@ -59,34 +60,32 @@ class Classifier(ABC):
         """
         self.name = name
 
-    @abstractmethod
     def detect_celebrity(self, image_path):
         """
         Analyzes a single image to determine if known celebrities are present.
-        This method must be implemented by all subclasses.
+        This method now calls the batch-processing `classify_images` method.
 
         Args:
             image_path (str): The path to the image file.
 
         Returns:
-            list: A list containing the names of detected celebrities, otherwise an empty list.
+            list: A list of dictionaries containing 'name' and 'location' of detected celebrities.
         """
-        pass
+        return self.classify_images([image_path]).get(image_path, [])
 
+    @abstractmethod
     def classify_images(self, image_paths):
         """
         Takes a list of image paths and returns a dictionary with the classification results.
+        This method must be implemented by all subclasses to handle batch processing.
 
         Args:
             image_paths (list): A list of strings, where each string is a path to an image.
 
         Returns:
-            dict: A dictionary where keys are image paths and values are lists of detected celebrity names.
+            dict: A dictionary where keys are image paths and values are lists of detected celebrity results.
         """
-        output = {}
-        for path in image_paths:
-            output[path] = self.detect_celebrity(path)
-        return output
+        pass
 
 # --- Face Recognition Classifier ---
 
@@ -142,43 +141,53 @@ class FaceRecognitionClassifier(Classifier):
             logger.error(f"Reference image not found at {reference_image_path}")
             return []
 
-    def detect_celebrity(self, image_path):
-        logger.info(f"Detecting celebrities in {image_path} using {self.name}")
+    def classify_images(self, image_paths):
+        logger.info(f"Batch detecting celebrities in {len(image_paths)} images using {self.name}")
         if not self.known_face_encodings:
             logger.warning("No known face encodings to compare against.")
-            return []
+            # Still process images to find all faces, just label them as "Unknown"
+            # return {path: [] for path in image_paths}
 
-        try:
-            logger.info(f"Loading image from {image_path}")
-            image = face_recognition.load_image_file(image_path)
-        except FileNotFoundError:
-            logger.error(f"Input image not found at {image_path}")
-            return []
-
-        logger.info(f"Finding face locations in {image_path} using model: {self.model}")
-        face_locations = face_recognition.face_locations(image, number_of_times_to_upsample=1, model=self.model)
-        logger.info(f"Found {len(face_locations)} face(s) in {image_path}")
-        face_encodings = face_recognition.face_encodings(image, face_locations)
-
-        detected_celebrities = []
-        for i, face_encoding in enumerate(face_encodings):
-            logger.info(f"Comparing face {i+1}/{len(face_encodings)} with known encodings.")
-            matches = face_recognition.compare_faces(
-                self.known_face_encodings,
-                face_encoding,
-                tolerance=self.tolerance
-            )
-            # Find all matches for the current face
-            for j, is_match in enumerate(matches):
-                if is_match:
-                    celebrity_name = self.known_face_names[j]
-                    logger.info(f"Match found for face {i+1}: {celebrity_name}")
-                    detected_celebrities.append(celebrity_name)
+        images = [face_recognition.load_image_file(p) for p in image_paths]
         
-        # Return unique names
-        unique_celebrities = list(set(detected_celebrities))
-        logger.info(f"Detected celebrities in {image_path}: {unique_celebrities}")
-        return unique_celebrities
+        logger.info(f"Finding face locations in batch using model: {self.model}")
+        batch_face_locations = face_recognition.batch_face_locations(images, number_of_times_to_upsample=1, batch_size=128)
+
+        output = {}
+        for i, image_path in enumerate(image_paths):
+            face_locations = batch_face_locations[i]
+            image = images[i]
+            
+            logger.info(f"Found {len(face_locations)} face(s) in {image_path}")
+            face_encodings = face_recognition.face_encodings(image, face_locations)
+
+            all_detections = []
+            for j, face_encoding in enumerate(face_encodings):
+                name = "Unknown"
+                if self.known_face_encodings:
+                    logger.info(f"Comparing face {j+1}/{len(face_encodings)} in {image_path} with known encodings.")
+                    matches = face_recognition.compare_faces(
+                        self.known_face_encodings,
+                        face_encoding,
+                        tolerance=self.tolerance
+                    )
+                    
+                    face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
+                    best_match_index = np.argmin(face_distances)
+
+                    if matches[best_match_index]:
+                        name = self.known_face_names[best_match_index]
+                        logger.info(f"Match found for face {j+1} in {image_path}: {name}")
+                
+                all_detections.append({
+                    "name": name,
+                    "location": face_locations[j]
+                })
+            
+            output[image_path] = all_detections
+            logger.info(f"Detected faces in {image_path}: {all_detections}")
+
+        return output
 
 # --- Vision Transformer (ViT) Classifier ---
 
@@ -271,45 +280,70 @@ class ViTClassifier(Classifier):
             logger.error(f'Reference image not found at {reference_image_path}')
             return None
 
-    def detect_celebrity(self, image_path):
-        logger.info(f"Detecting celebrities in {image_path} using {self.name}")
-        if not self.reference_embeddings:
-            logger.warning("No reference embeddings to compare against.")
-            return []
+    def classify_images(self, image_paths):
+        logger.info(f"Batch detecting celebrities in {len(image_paths)} images using {self.name}")
+
+        output = {path: [] for path in image_paths}
         
         try:
-            logger.info(f"Loading image from {image_path}")
-            target_image = face_recognition.load_image_file(image_path)
-            face_locations = face_recognition.face_locations(target_image)
-            logger.info(f"Found {len(face_locations)} face(s) in {image_path}")
-            
-            if not face_locations:
-                return []
-            
-            detected_celebrities = []
-            for i, (top, right, bottom, left) in enumerate(face_locations):
-                logger.info(f"Processing face {i+1}/{len(face_locations)}")
-                face_image = target_image[top:bottom, left:right]
+            images = [face_recognition.load_image_file(p) for p in image_paths]
+        except FileNotFoundError as e:
+            logger.error(f"Image not found: {e}")
+            return output
+
+        face_locations_by_image = [face_recognition.face_locations(img) for img in images]
+
+        # Initialize output with all detected faces as "Unknown"
+        for i, image_path in enumerate(image_paths):
+            for face_location in face_locations_by_image[i]:
+                output[image_path].append({
+                    "name": "Unknown",
+                    "location": face_location
+                })
+
+        face_batch = []
+        face_indices = [] # To map faces back to their original images
+
+        for i, (image, face_locations) in enumerate(zip(images, face_locations_by_image)):
+            for j, (top, right, bottom, left) in enumerate(face_locations):
+                face_image = image[top:bottom, left:right]
                 face_pil = Image.fromarray(face_image)
+                face_batch.append(self.transform(face_pil))
+                face_indices.append({'image_index': i, 'face_location': (top, right, bottom, left), 'face_in_image_index': j})
+        
+        if not face_batch:
+            logger.info("No faces found in any of the images.")
+            return output
+
+        if not self.reference_embeddings:
+            logger.warning("No reference embeddings to compare against.")
+            return output
+
+        face_tensors = torch.stack(face_batch).to(self.device)
+        
+        logger.info(f"Processing a batch of {len(face_tensors)} faces.")
+        with torch.no_grad():
+            embeddings = self.model.forward_features(face_tensors)
+            embeddings = embeddings[:, 0].cpu().numpy()
+
+        for i, embedding in enumerate(embeddings):
+            cosine_similarities = [np.dot(ref_embedding, embedding) / (norm(ref_embedding) * norm(embedding)) for ref_embedding in self.reference_embeddings]
+            best_match_index = np.argmax(cosine_similarities)
+
+            if cosine_similarities[best_match_index] > self.threshold:
+                celebrity_name = self.reference_names[best_match_index]
+                original_image_index = face_indices[i]['image_index']
+                face_in_image_index = face_indices[i]['face_in_image_index']
+                image_path = image_paths[original_image_index]
                 
-                embedding = self._get_embedding(face_pil)
+                logger.info(f"Match found for a face in {image_path}: {celebrity_name} with similarity {cosine_similarities[best_match_index]}")
                 
-                for j, ref_embedding in enumerate(self.reference_embeddings):
-                    cosine_similarity = np.dot(ref_embedding, embedding) / (norm(ref_embedding) * norm(embedding))
-                    logger.info(f"Comparing with {self.reference_names[j]}: cosine similarity = {cosine_similarity}")
-                    
-                    if cosine_similarity > self.threshold:
-                        celebrity_name = self.reference_names[j]
-                        logger.info(f"Match found for face {i+1}: {celebrity_name}")
-                        detected_celebrities.append(celebrity_name)
+                output[image_path][face_in_image_index]['name'] = celebrity_name
+
+        for path, results in output.items():
+            logger.info(f"Detected faces in {path}: {results}")
             
-            unique_celebrities = list(set(detected_celebrities))
-            logger.info(f"Detected celebrities in {image_path}: {unique_celebrities}")
-            return unique_celebrities
-            
-        except FileNotFoundError:
-            logger.error(f'Image not found at {image_path}')
-            return []
+        return output
 
 # --- Classifier Factory ---
 
