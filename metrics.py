@@ -29,7 +29,11 @@ def load_test_set(json_path):
     try:
         with open(json_path, 'r') as f:
             test_set_data = json.load(f)
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        logger.error(f"Test set file not found at {json_path}: {e}", exc_info=True)
+        return [], []
+    except json.JSONDecodeError as e:
+        logger.error(f"Could not decode JSON from {json_path}: {e}", exc_info=True)
         return [], []
 
     for item in test_set_data:
@@ -101,7 +105,8 @@ def calculate_metrics(ground_truth_labels, predictions):
     
     try:
         auc = roc_auc_score(ground_truth_labels, predictions)
-    except ValueError:
+    except ValueError as e:
+        logger.warning(f"Could not calculate AUC, likely due to only one class being present in the data. Error: {e}", exc_info=True)
         auc = "N/A"
 
     return {
@@ -196,5 +201,9 @@ def load_test_config(config_path):
         with open(config_path, 'r') as f:
             config = json.load(f)
         return config
-    except FileNotFoundError:
+    except FileNotFoundError as e:
+        logger.error(f"Test config file not found at {config_path}: {e}", exc_info=True)
+        return None
+    except json.JSONDecodeError as e:
+        logger.error(f"Could not decode JSON from {config_path}: {e}", exc_info=True)
         return None
