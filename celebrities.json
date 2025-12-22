@@ -1,6 +1,14 @@
 [
     {
         "name": "Hugh Jackman",
-        "reference_image_path": "Images/references/104711.jpg"
+        "reference_image_path": "Images/references/HughJackman.jpg"
+    },
+    {
+        "name": "Donald Trump",
+        "reference_image_path": "Images/references/DonaldTrump.jpg"
+    },
+    {
+        "name": "Giorgia Meloni",
+        "reference_image_path": "Images/references/GiorgiaMeloni.jpg"
     }
 ]

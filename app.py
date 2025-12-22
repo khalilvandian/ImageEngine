@@ -55,9 +55,10 @@ def _(mo):
 
 @app.cell
 def _(mo):
-    classifier_type = mo.ui.text(
+    classifier_type = mo.ui.dropdown(
+        options=["face_recognition_cnn", "face_recognition_hog", "vit_b32"],
         value="face_recognition_cnn",
-        label="Classifier Type (e.g., face_recognition_cnn, face_recognition_hog, vit_b32)"
+        label="Select Classifier Type"
     )
     celebrities_json_path = mo.ui.text(
         value="celebrities.json",

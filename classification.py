@@ -14,6 +14,7 @@ The module includes:
 import json
 from abc import ABC, abstractmethod
 import os
+import tempfile
 import face_recognition
 from logging_utils import setup_logger
 import numpy as np
@@ -37,11 +38,11 @@ def load_celebrities_from_json(json_path):
             celebrities_data = json.load(f)
         logger.info(f"Successfully loaded {len(celebrities_data)} celebrities from {json_path}")
         return celebrities_data
-    except FileNotFoundError:
-        logger.error(f"JSON file not found at {json_path}")
+    except FileNotFoundError as e:
+        logger.error(f"JSON file not found at {json_path}: {e}", exc_info=True)
         return []
-    except json.JSONDecodeError:
-        logger.error(f"Could not decode JSON from {json_path}")
+    except json.JSONDecodeError as e:
+        logger.error(f"Could not decode JSON from {json_path}: {e}", exc_info=True)
         return []
 
 # --- Abstract Base Class for Classifiers ---
@@ -137,8 +138,8 @@ class FaceRecognitionClassifier(Classifier):
             else:
                 logger.warning(f"Could not find a face in the reference image: {reference_image_path}")
                 return []
-        except FileNotFoundError:
-            logger.error(f"Reference image not found at {reference_image_path}")
+        except FileNotFoundError as e:
+            logger.error(f"Reference image not found at {reference_image_path}: {e}", exc_info=True)
             return []
 
     def classify_images(self, image_paths):
@@ -199,7 +200,8 @@ try:
     import numpy as np
     from numpy.linalg import norm
     VIT_LIBRARIES_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    logger.error(f"Failed to import ViT libraries. ViTClassifier will be unavailable. Error: {e}", exc_info=True)
     VIT_LIBRARIES_AVAILABLE = False
 
 class ViTClassifier(Classifier):
@@ -288,7 +290,7 @@ class ViTClassifier(Classifier):
         try:
             images = [face_recognition.load_image_file(p) for p in image_paths]
         except FileNotFoundError as e:
-            logger.error(f"Image not found: {e}")
+            logger.error(f"Image not found: {e}", exc_info=True)
             return output
 
         face_locations_by_image = [face_recognition.face_locations(img) for img in images]
