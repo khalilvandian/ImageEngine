@@ -113,12 +113,12 @@ class FaceRecognitionClassifier(Classifier):
         self.known_face_names = []
 
         for celebrity in celebrity_data:
-            logger.info(f"Loading reference encoding for {celebrity['name']} from {celebrity['reference_image_path']}")
+            logger.debug(f"Loading reference encoding for {celebrity['name']} from {celebrity['reference_image_path']}")
             encodings = self._load_reference_encoding(celebrity["reference_image_path"])
             if encodings:
                 self.known_face_encodings.extend(encodings)
                 self.known_face_names.extend([celebrity["name"]] * len(encodings))
-                logger.info(f"Successfully loaded {len(encodings)} encodings for {celebrity['name']}")
+                logger.debug(f"Successfully loaded {len(encodings)} encodings for {celebrity['name']}")
             else:
                 logger.warning(f"Could not load reference encoding for {celebrity['name']} from {celebrity['reference_image_path']}")
 
@@ -129,11 +129,11 @@ class FaceRecognitionClassifier(Classifier):
 
     def _load_reference_encoding(self, reference_image_path):
         try:
-            logger.info(f"Loading reference image from {reference_image_path}")
+            logger.debug(f"Loading reference image from {reference_image_path}")
             reference_image = face_recognition.load_image_file(reference_image_path)
             reference_face_encodings = face_recognition.face_encodings(reference_image)
             if reference_face_encodings:
-                logger.info(f"Found {len(reference_face_encodings)} face(s) in {reference_image_path}")
+                logger.debug(f"Found {len(reference_face_encodings)} face(s) in {reference_image_path}")
                 return reference_face_encodings
             else:
                 logger.warning(f"Could not find a face in the reference image: {reference_image_path}")
@@ -159,14 +159,14 @@ class FaceRecognitionClassifier(Classifier):
             face_locations = batch_face_locations[i]
             image = images[i]
             
-            logger.info(f"Found {len(face_locations)} face(s) in {image_path}")
+            logger.debug(f"Found {len(face_locations)} face(s) in {image_path}")
             face_encodings = face_recognition.face_encodings(image, face_locations)
 
             all_detections = []
             for j, face_encoding in enumerate(face_encodings):
                 name = "Unknown"
                 if self.known_face_encodings:
-                    logger.info(f"Comparing face {j+1}/{len(face_encodings)} in {image_path} with known encodings.")
+                    logger.debug(f"Comparing face {j+1}/{len(face_encodings)} in {image_path} with known encodings.")
                     matches = face_recognition.compare_faces(
                         self.known_face_encodings,
                         face_encoding,
@@ -178,7 +178,7 @@ class FaceRecognitionClassifier(Classifier):
 
                     if matches[best_match_index]:
                         name = self.known_face_names[best_match_index]
-                        logger.info(f"Match found for face {j+1} in {image_path}: {name}")
+                        logger.debug(f"Match found for face {j+1} in {image_path}: {name}")
                 
                 all_detections.append({
                     "name": name,
@@ -186,7 +186,7 @@ class FaceRecognitionClassifier(Classifier):
                 })
             
             output[image_path] = all_detections
-            logger.info(f"Detected faces in {image_path}: {all_detections}")
+            logger.debug(f"Detected faces in {image_path}: {all_detections}")
 
         return output
 
@@ -242,12 +242,12 @@ class ViTClassifier(Classifier):
         self.reference_names = []
 
         for celebrity in celebrity_data:
-            logger.info(f"Generating reference embedding for {celebrity['name']} from {celebrity['reference_image_path']}")
+            logger.debug(f"Generating reference embedding for {celebrity['name']} from {celebrity['reference_image_path']}")
             embedding = self._generate_reference_embedding(celebrity["reference_image_path"])
             if embedding is not None:
                 self.reference_embeddings.append(embedding)
                 self.reference_names.append(celebrity["name"])
-                logger.info(f"Successfully generated embedding for {celebrity['name']}")
+                logger.debug(f"Successfully generated embedding for {celebrity['name']}")
             else:
                 logger.warning(f"Could not generate reference embedding for {celebrity['name']} from {celebrity['reference_image_path']}")
 
@@ -257,7 +257,7 @@ class ViTClassifier(Classifier):
             logger.info(f"Successfully initialized {self.name} with {len(self.reference_embeddings)} total reference embeddings.")
 
     def _get_embedding(self, face_image_pil):
-        logger.info("Generating embedding for face image.")
+        logger.debug("Generating embedding for face image.")
         img_tensor = self.transform(face_image_pil).unsqueeze(0).to(self.device)
         with torch.no_grad():
             embedding = self.model.forward_features(img_tensor)
@@ -266,11 +266,11 @@ class ViTClassifier(Classifier):
 
     def _generate_reference_embedding(self, reference_image_path):
         try:
-            logger.info(f"Loading reference image from {reference_image_path}")
+            logger.debug(f"Loading reference image from {reference_image_path}")
             reference_image = face_recognition.load_image_file(reference_image_path)
             face_locations = face_recognition.face_locations(reference_image)
             if face_locations:
-                logger.info(f"Found {len(face_locations)} face(s) in {reference_image_path}")
+                logger.debug(f"Found {len(face_locations)} face(s) in {reference_image_path}")
                 top, right, bottom, left = face_locations[0]
                 reference_face_image = reference_image[top:bottom, left:right]
                 reference_face_pil = Image.fromarray(reference_face_image)
@@ -323,7 +323,7 @@ class ViTClassifier(Classifier):
 
         face_tensors = torch.stack(face_batch).to(self.device)
         
-        logger.info(f"Processing a batch of {len(face_tensors)} faces.")
+        logger.debug(f"Processing a batch of {len(face_tensors)} faces.")
         with torch.no_grad():
             embeddings = self.model.forward_features(face_tensors)
             embeddings = embeddings[:, 0].cpu().numpy()
@@ -338,12 +338,12 @@ class ViTClassifier(Classifier):
                 face_in_image_index = face_indices[i]['face_in_image_index']
                 image_path = image_paths[original_image_index]
                 
-                logger.info(f"Match found for a face in {image_path}: {celebrity_name} with similarity {cosine_similarities[best_match_index]}")
+                logger.debug(f"Match found for a face in {image_path}: {celebrity_name} with similarity {cosine_similarities[best_match_index]}")
                 
                 output[image_path][face_in_image_index]['name'] = celebrity_name
 
         for path, results in output.items():
-            logger.info(f"Detected faces in {path}: {results}")
+            logger.debug(f"Detected faces in {path}: {results}")
             
         return output
 

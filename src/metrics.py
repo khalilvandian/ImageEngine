@@ -11,6 +11,7 @@ import pandas as pd
 import datetime
 from src.image_utils import draw_bounding_boxes
 from src.logging_utils import setup_logger
+from tqdm import tqdm
 
 logger = setup_logger()
 
@@ -60,6 +61,9 @@ def run_classification_on_test_set(classifier, image_paths, output_image_dir=Non
     Returns:
         list: A list of lists, where each inner list contains detected names for an image.
     """
+    total_images = len(image_paths)
+    logger.info(f"Running classification on {total_images} test images with {classifier.name}")
+
     all_detections = []
     
     # If output_image_dir is provided, create a unique subdirectory for this test run
@@ -70,20 +74,21 @@ def run_classification_on_test_set(classifier, image_paths, output_image_dir=Non
         os.makedirs(full_output_dir, exist_ok=True)
         logger.info(f"Test output images will be saved to: {full_output_dir}")
 
-    for image_path in image_paths:
+    progress = tqdm(image_paths, desc="Classifying", unit="img")
+    for image_path in progress:
         results = classifier.detect_celebrity(image_path)
-        # Extract names from the list of result dictionaries
         detected_names = [result['name'] for result in results]
         all_detections.append(detected_names)
+        progress.set_postfix({'last': os.path.basename(image_path)})
         
-        # Save annotated image if output_image_dir is provided
         if output_image_dir:
             annotated_image = draw_bounding_boxes(image_path, results)
             filename = os.path.basename(image_path)
             output_path = os.path.join(full_output_dir, filename)
             annotated_image.save(output_path)
-            logger.info(f"Saved annotated test image to {output_path}")
+            logger.debug(f"Saved annotated test image to {output_path}")
 
+    logger.info("Completed test set classification.")
     return all_detections
 
 def calculate_metrics(ground_truth_labels, all_detections):
@@ -97,6 +102,17 @@ def calculate_metrics(ground_truth_labels, all_detections):
     Returns:
         dict: A dictionary containing the calculated metrics.
     """
+    # Handle edge cases early to avoid sklearn target validation errors.
+    if not ground_truth_labels or not all_detections:
+        logger.warning("Missing ground truth or predictions; returning empty metrics.")
+        return {
+            "accuracy (exact match)": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0,
+            "area_under_curve": "N/A (Multi-label)",
+        }
+
     mlb = MultiLabelBinarizer()
     
     # Fit on both true labels and detected labels to ensure all classes are covered
@@ -107,8 +123,21 @@ def calculate_metrics(ground_truth_labels, all_detections):
         all_labels.extend(labels)
     for labels in all_detections:
         all_labels.extend(labels)
-    
+
     classes = sorted(list(set(all_labels)))
+
+    # If there are no labels at all, sklearn accuracy/precision will raise because
+    # it cannot infer a valid target type. Return zeros with a clear signal instead.
+    if not classes:
+        logger.warning("No labels found in ground truth or predictions; returning zeroed metrics.")
+        return {
+            "accuracy (exact match)": 0.0,
+            "precision": 0.0,
+            "recall": 0.0,
+            "f1_score": 0.0,
+            "area_under_curve": "N/A (Multi-label)",
+        }
+
     mlb.fit([classes])
 
     y_true = mlb.transform(ground_truth_labels)
