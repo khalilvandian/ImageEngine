@@ -91,9 +91,51 @@ def run_classification_on_test_set(classifier, image_paths, output_image_dir=Non
     logger.info("Completed test set classification.")
     return all_detections
 
+def normalize_detections_for_metrics(ground_truth_labels, all_detections):
+    """
+    Normalizes detections to handle 'Unknown' labels appropriately.
+    
+    Logic:
+    - If ground truth is empty (no known celebrities) and detection is ['Unknown'], 
+      normalize to [] (correctly identified as no known celebrities)
+    - If ground truth has known celebrities and detection contains 'Unknown' mixed with other labels,
+      remove 'Unknown' (it's correct that other people exist, but we only care about known celebrities)
+    - If ground truth has known celebrities and detection is only ['Unknown'],
+      remove 'Unknown' (no known celebrities detected when expected)
+    
+    Args:
+        ground_truth_labels (list of lists): The ground truth labels.
+        all_detections (list of lists): The detected names for each image.
+    
+    Returns:
+        list: Normalized detections.
+    """
+    normalized_detections = []
+    
+    for gt, det in zip(ground_truth_labels, all_detections):
+        if not gt:  # Ground truth is empty (no known celebrities in image)
+            # If we only detected "Unknown", that's correct -> normalize to []
+            if det == ["Unknown"]:
+                normalized_detections.append([])
+            else:
+                # If we detected known celebrities when there are none, keep as is (will be marked as false positive)
+                normalized_detections.append(det)
+        else:
+            # Ground truth has known celebrities
+            # Remove "Unknown" from detections as it represents other faces that are not in our celebrity list
+            # This is correct behavior and shouldn't penalize the metrics
+            filtered_det = [name for name in det if name != "Unknown"]
+            normalized_detections.append(filtered_det)
+    
+    return normalized_detections
+
 def calculate_metrics(ground_truth_labels, all_detections):
     """
     Calculates classification metrics for multi-label multi-class data.
+    
+    Handles 'Unknown' labels intelligently:
+    - 'Unknown' when ground truth is empty is considered correct (no known celebrities)
+    - 'Unknown' mixed with known celebrities is filtered out (correctly identifies other people exist)
 
     Args:
         ground_truth_labels (list of lists): The ground truth labels.
@@ -113,6 +155,10 @@ def calculate_metrics(ground_truth_labels, all_detections):
             "area_under_curve": "N/A (Multi-label)",
         }
 
+    # Normalize detections to handle "Unknown" labels appropriately
+    normalized_detections = normalize_detections_for_metrics(ground_truth_labels, all_detections)
+    logger.debug(f"Normalized detections from {all_detections} to {normalized_detections}")
+
     mlb = MultiLabelBinarizer()
     
     # Fit on both true labels and detected labels to ensure all classes are covered
@@ -121,7 +167,7 @@ def calculate_metrics(ground_truth_labels, all_detections):
     all_labels = []
     for labels in ground_truth_labels:
         all_labels.extend(labels)
-    for labels in all_detections:
+    for labels in normalized_detections:
         all_labels.extend(labels)
 
     classes = sorted(list(set(all_labels)))
@@ -141,7 +187,7 @@ def calculate_metrics(ground_truth_labels, all_detections):
     mlb.fit([classes])
 
     y_true = mlb.transform(ground_truth_labels)
-    y_pred = mlb.transform(all_detections)
+    y_pred = mlb.transform(normalized_detections)
 
     # Accuracy in multi-label is "Subset Accuracy" (strict match)
     accuracy = accuracy_score(y_true, y_pred)
