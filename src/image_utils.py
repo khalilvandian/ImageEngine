@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont
-from logging_utils import setup_logger
+from src.logging_utils import setup_logger
 
 logger = setup_logger()
 
@@ -20,9 +20,12 @@ def draw_bounding_boxes(image_path, results):
     
     try:
         font = ImageFont.truetype("arial.ttf", 15)
-    except IOError as e:
-        logger.warning(f"Could not load 'arial.ttf'. Using default font. Error: {e}", exc_info=True)
-        font = ImageFont.load_default()
+    except IOError:
+        try:
+            font = ImageFont.truetype("LiberationSans-Regular.ttf", 15)
+        except IOError:
+            logger.warning("Could not load 'arial.ttf' or 'LiberationSans-Regular.ttf'. Using default font.")
+            font = ImageFont.load_default()
 
     for result in results:
         name = result['name']

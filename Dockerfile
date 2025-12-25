@@ -8,6 +8,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     cmake \
     build-essential \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone and install dlib from source to ensure it's compiled with CUDA support

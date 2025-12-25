@@ -16,7 +16,7 @@ from abc import ABC, abstractmethod
 import os
 import tempfile
 import face_recognition
-from logging_utils import setup_logger
+from src.logging_utils import setup_logger
 import numpy as np
 
 logger = setup_logger()
