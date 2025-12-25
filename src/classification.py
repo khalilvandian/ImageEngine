@@ -52,53 +52,89 @@ class FaceDetector:
     A modular face detector that can use different detection models (CNN or HOG).
     Separates face detection from face recognition/identification.
     """
-    def __init__(self, model="cnn"):
+    def __init__(self, model="cnn", upsample=2, enable_multi_pass=True):
         """
         Initializes the FaceDetector.
         
         Args:
             model (str): The face detection model to use ('cnn' or 'hog').
                         CNN is more accurate but slower, HOG is faster but less accurate.
+            upsample (int): How many times to upsample the image for detection.
+                           Higher values (2-3) detect smaller faces but are slower.
+                           Recommended: 2 for general use, 3 for very small faces, 1 for speed.
+            enable_multi_pass (bool): If True and no faces found, retry with higher upsampling.
         """
         if model not in ["cnn", "hog"]:
             raise ValueError(f"Invalid face detection model: {model}. Must be 'cnn' or 'hog'.")
         self.model = model
-        logger.info(f"FaceDetector initialized with model: {model}")
+        self.upsample = upsample
+        self.enable_multi_pass = enable_multi_pass
+        logger.info(f"FaceDetector initialized with model: {model}, upsample: {upsample}, multi-pass: {enable_multi_pass}")
     
-    def detect_faces(self, image):
+    def detect_faces(self, image, number_of_times_to_upsample=None):
         """
         Detects faces in a single image.
         
         Args:
             image: A loaded image (numpy array from face_recognition.load_image_file).
+            number_of_times_to_upsample (int, optional): Override the default upsampling value.
         
         Returns:
             list: A list of face locations as (top, right, bottom, left) tuples.
         """
-        return face_recognition.face_locations(image, model=self.model)
+        upsample = number_of_times_to_upsample if number_of_times_to_upsample is not None else self.upsample
+        face_locations = face_recognition.face_locations(image, model=self.model, number_of_times_to_upsample=upsample)
+        
+        # Multi-pass detection: if no faces found and multi-pass enabled, try with higher upsampling
+        if not face_locations and self.enable_multi_pass and upsample < 3:
+            logger.debug(f"No faces found with upsample={upsample}, retrying with upsample={upsample + 1}")
+            face_locations = face_recognition.face_locations(image, model=self.model, number_of_times_to_upsample=upsample + 1)
+        
+        return face_locations
     
-    def detect_faces_batch(self, images, batch_size=128, number_of_times_to_upsample=1):
+    def detect_faces_batch(self, images, batch_size=128, number_of_times_to_upsample=None):
         """
         Detects faces in a batch of images for efficiency.
         
         Args:
             images (list): A list of loaded images (numpy arrays).
             batch_size (int): Number of images to process at once.
-            number_of_times_to_upsample (int): How many times to upsample the image for detection.
+            number_of_times_to_upsample (int, optional): Override the default upsampling value.
         
         Returns:
             list: A list of lists, where each inner list contains face locations for that image.
         """
+        upsample = number_of_times_to_upsample if number_of_times_to_upsample is not None else self.upsample
+        
         if self.model == "cnn":
             # Use batch processing for CNN (more efficient)
-            return face_recognition.batch_face_locations(
+            face_locations_batch = face_recognition.batch_face_locations(
                 images,
-                number_of_times_to_upsample=number_of_times_to_upsample,
+                number_of_times_to_upsample=upsample,
                 batch_size=batch_size
             )
+            
+            # Multi-pass detection: retry images with no faces found
+            if self.enable_multi_pass and upsample < 3:
+                retry_indices = [i for i, locs in enumerate(face_locations_batch) if not locs]
+                if retry_indices:
+                    logger.debug(f"Retrying {len(retry_indices)} images with no faces using upsample={upsample + 1}")
+                    retry_images = [images[i] for i in retry_indices]
+                    retry_results = face_recognition.batch_face_locations(
+                        retry_images,
+                        number_of_times_to_upsample=upsample + 1,
+                        batch_size=batch_size
+                    )
+                    # Update the original results
+                    for idx, retry_idx in enumerate(retry_indices):
+                        if retry_results[idx]:  # If faces were found on retry
+                            face_locations_batch[retry_idx] = retry_results[idx]
+                            logger.debug(f"Found {len(retry_results[idx])} face(s) on retry for image {retry_idx}")
+            
+            return face_locations_batch
         else:
             # HOG doesn't have native batch support, process sequentially
-            return [face_recognition.face_locations(img, model=self.model) for img in images]
+            return [self.detect_faces(img, number_of_times_to_upsample=upsample) for img in images]
 
 # --- Abstract Base Class for Classifiers ---
 
@@ -150,7 +186,7 @@ class FaceRecognitionClassifier(Classifier):
     A classifier that uses the 'face_recognition' library. This is based on the logic
     from the original classification.py and lapressHughJackmanDetector.py.
     """
-    def __init__(self, name, celebrity_data, tolerance=0.6, face_detection_model="cnn"):
+    def __init__(self, name, celebrity_data, tolerance=0.6, face_detection_model="cnn", detection_upsample=2, enable_multi_pass=True):
         """
         Initializes the FaceRecognitionClassifier.
 
@@ -159,11 +195,13 @@ class FaceRecognitionClassifier(Classifier):
             celebrity_data (list): A list of dictionaries, each with "name" and "reference_image_path".
             tolerance (float): How much distance between faces to consider it a match. Lower is stricter.
             face_detection_model (str): The face detection model to use ('cnn' or 'hog').
+            detection_upsample (int): Upsampling factor for face detection (1-3, default: 2).
+            enable_multi_pass (bool): Enable multi-pass detection for missed faces (default: True).
         """
         super().__init__(name)
-        logger.info(f"Initializing FaceRecognitionClassifier with detection model: {face_detection_model}, tolerance: {tolerance}")
+        logger.info(f"Initializing FaceRecognitionClassifier with detection model: {face_detection_model}, tolerance: {tolerance}, upsample: {detection_upsample}")
         self.tolerance = tolerance
-        self.face_detector = FaceDetector(model=face_detection_model)
+        self.face_detector = FaceDetector(model=face_detection_model, upsample=detection_upsample, enable_multi_pass=enable_multi_pass)
         self.known_face_encodings = []
         self.known_face_names = []
 
@@ -206,8 +244,8 @@ class FaceRecognitionClassifier(Classifier):
 
         images = [face_recognition.load_image_file(p) for p in image_paths]
         
-        logger.info(f"Finding face locations in batch using detection model: {self.face_detector.model}")
-        batch_face_locations = self.face_detector.detect_faces_batch(images, batch_size=128, number_of_times_to_upsample=1)
+        logger.info(f"Finding face locations in batch using detection model: {self.face_detector.model} with upsample={self.face_detector.upsample}")
+        batch_face_locations = self.face_detector.detect_faces_batch(images, batch_size=128)
 
         output = {}
         for i, image_path in enumerate(image_paths):
@@ -264,7 +302,7 @@ class ViTClassifier(Classifier):
     A classifier that uses a Vision Transformer (ViT) model. This is based on the
     logic from the vit32_hugh_jackman_detector.ipynb notebook.
     """
-    def __init__(self, name, celebrity_data, threshold=0.8, face_detection_model="cnn"):
+    def __init__(self, name, celebrity_data, threshold=0.8, face_detection_model="cnn", detection_upsample=2, enable_multi_pass=True):
         """
         Initializes the ViTClassifier.
 
@@ -273,6 +311,8 @@ class ViTClassifier(Classifier):
             celebrity_data (list): A list of dictionaries, each with "name" and "reference_image_path".
             threshold (float): Cosine similarity threshold for a match.
             face_detection_model (str): The face detection model to use ('cnn' or 'hog'). Defaults to 'cnn'.
+            detection_upsample (int): Upsampling factor for face detection (1-3, default: 2).
+            enable_multi_pass (bool): Enable multi-pass detection for missed faces (default: True).
         """
         super().__init__(name)
         
@@ -280,9 +320,9 @@ class ViTClassifier(Classifier):
             logger.error("Required libraries for ViTClassifier (torch, timm, Pillow, numpy) are not installed.")
             raise ImportError("Required libraries for ViTClassifier (torch, timm, Pillow, numpy) are not installed.")
 
-        logger.info(f"Initializing ViTClassifier with threshold: {threshold}, detection model: {face_detection_model}")
+        logger.info(f"Initializing ViTClassifier with threshold: {threshold}, detection model: {face_detection_model}, upsample: {detection_upsample}")
         self.threshold = threshold
-        self.face_detector = FaceDetector(model=face_detection_model)
+        self.face_detector = FaceDetector(model=face_detection_model, upsample=detection_upsample, enable_multi_pass=enable_multi_pass)
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f"ViTClassifier will use device: {self.device}")
@@ -350,7 +390,7 @@ class ViTClassifier(Classifier):
             logger.error(f"Image not found: {e}", exc_info=True)
             return output
 
-        logger.info(f"Detecting faces using detection model: {self.face_detector.model}")
+        logger.info(f"Detecting faces using detection model: {self.face_detector.model} with upsample={self.face_detector.upsample}")
         face_locations_by_image = self.face_detector.detect_faces_batch(images, batch_size=128)
 
         # Initialize output with all detected faces as "Unknown"
@@ -443,11 +483,14 @@ def get_classifier(classifier_type, celebrity_data, face_detection_model=None):
             logger.warning("ViT libraries not found. ViT classifier is unavailable.")
             return None
         detection_model = face_detection_model if face_detection_model else "cnn"
+        # Use lower upsampling for ViT to reduce memory usage
         return ViTClassifier(
             name="vit_b32",
             celebrity_data=celebrity_data,
             threshold=0.6,
-            face_detection_model=detection_model
+            face_detection_model=detection_model,
+            detection_upsample=1,  # Lower for memory efficiency
+            enable_multi_pass=False  # Disable multi-pass to save memory
         )
     else:
         logger.error(f"Unknown classifier type: {classifier_type}")
