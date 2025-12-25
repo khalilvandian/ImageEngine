@@ -45,6 +45,61 @@ def load_celebrities_from_json(json_path):
         logger.error(f"Could not decode JSON from {json_path}: {e}", exc_info=True)
         return []
 
+# --- Face Detector Class ---
+
+class FaceDetector:
+    """
+    A modular face detector that can use different detection models (CNN or HOG).
+    Separates face detection from face recognition/identification.
+    """
+    def __init__(self, model="cnn"):
+        """
+        Initializes the FaceDetector.
+        
+        Args:
+            model (str): The face detection model to use ('cnn' or 'hog').
+                        CNN is more accurate but slower, HOG is faster but less accurate.
+        """
+        if model not in ["cnn", "hog"]:
+            raise ValueError(f"Invalid face detection model: {model}. Must be 'cnn' or 'hog'.")
+        self.model = model
+        logger.info(f"FaceDetector initialized with model: {model}")
+    
+    def detect_faces(self, image):
+        """
+        Detects faces in a single image.
+        
+        Args:
+            image: A loaded image (numpy array from face_recognition.load_image_file).
+        
+        Returns:
+            list: A list of face locations as (top, right, bottom, left) tuples.
+        """
+        return face_recognition.face_locations(image, model=self.model)
+    
+    def detect_faces_batch(self, images, batch_size=128, number_of_times_to_upsample=1):
+        """
+        Detects faces in a batch of images for efficiency.
+        
+        Args:
+            images (list): A list of loaded images (numpy arrays).
+            batch_size (int): Number of images to process at once.
+            number_of_times_to_upsample (int): How many times to upsample the image for detection.
+        
+        Returns:
+            list: A list of lists, where each inner list contains face locations for that image.
+        """
+        if self.model == "cnn":
+            # Use batch processing for CNN (more efficient)
+            return face_recognition.batch_face_locations(
+                images,
+                number_of_times_to_upsample=number_of_times_to_upsample,
+                batch_size=batch_size
+            )
+        else:
+            # HOG doesn't have native batch support, process sequentially
+            return [face_recognition.face_locations(img, model=self.model) for img in images]
+
 # --- Abstract Base Class for Classifiers ---
 
 class Classifier(ABC):
@@ -95,7 +150,7 @@ class FaceRecognitionClassifier(Classifier):
     A classifier that uses the 'face_recognition' library. This is based on the logic
     from the original classification.py and lapressHughJackmanDetector.py.
     """
-    def __init__(self, name, celebrity_data, tolerance=0.6, model="cnn"):
+    def __init__(self, name, celebrity_data, tolerance=0.6, face_detection_model="cnn"):
         """
         Initializes the FaceRecognitionClassifier.
 
@@ -103,12 +158,12 @@ class FaceRecognitionClassifier(Classifier):
             name (str): The name for this classifier instance.
             celebrity_data (list): A list of dictionaries, each with "name" and "reference_image_path".
             tolerance (float): How much distance between faces to consider it a match. Lower is stricter.
-            model (str): The face detection model to use ('cnn' or 'hog').
+            face_detection_model (str): The face detection model to use ('cnn' or 'hog').
         """
         super().__init__(name)
-        logger.info(f"Initializing FaceRecognitionClassifier with model: {model}, tolerance: {tolerance}")
+        logger.info(f"Initializing FaceRecognitionClassifier with detection model: {face_detection_model}, tolerance: {tolerance}")
         self.tolerance = tolerance
-        self.model = model
+        self.face_detector = FaceDetector(model=face_detection_model)
         self.known_face_encodings = []
         self.known_face_names = []
 
@@ -151,8 +206,8 @@ class FaceRecognitionClassifier(Classifier):
 
         images = [face_recognition.load_image_file(p) for p in image_paths]
         
-        logger.info(f"Finding face locations in batch using model: {self.model}")
-        batch_face_locations = face_recognition.batch_face_locations(images, number_of_times_to_upsample=1, batch_size=128)
+        logger.info(f"Finding face locations in batch using detection model: {self.face_detector.model}")
+        batch_face_locations = self.face_detector.detect_faces_batch(images, batch_size=128, number_of_times_to_upsample=1)
 
         output = {}
         for i, image_path in enumerate(image_paths):
@@ -209,7 +264,7 @@ class ViTClassifier(Classifier):
     A classifier that uses a Vision Transformer (ViT) model. This is based on the
     logic from the vit32_hugh_jackman_detector.ipynb notebook.
     """
-    def __init__(self, name, celebrity_data, threshold=0.8):
+    def __init__(self, name, celebrity_data, threshold=0.8, face_detection_model="cnn"):
         """
         Initializes the ViTClassifier.
 
@@ -217,6 +272,7 @@ class ViTClassifier(Classifier):
             name (str): The name for this classifier instance.
             celebrity_data (list): A list of dictionaries, each with "name" and "reference_image_path".
             threshold (float): Cosine similarity threshold for a match.
+            face_detection_model (str): The face detection model to use ('cnn' or 'hog'). Defaults to 'cnn'.
         """
         super().__init__(name)
         
@@ -224,8 +280,9 @@ class ViTClassifier(Classifier):
             logger.error("Required libraries for ViTClassifier (torch, timm, Pillow, numpy) are not installed.")
             raise ImportError("Required libraries for ViTClassifier (torch, timm, Pillow, numpy) are not installed.")
 
-        logger.info(f"Initializing ViTClassifier with threshold: {threshold}")
+        logger.info(f"Initializing ViTClassifier with threshold: {threshold}, detection model: {face_detection_model}")
         self.threshold = threshold
+        self.face_detector = FaceDetector(model=face_detection_model)
         
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         logger.info(f"ViTClassifier will use device: {self.device}")
@@ -268,7 +325,7 @@ class ViTClassifier(Classifier):
         try:
             logger.debug(f"Loading reference image from {reference_image_path}")
             reference_image = face_recognition.load_image_file(reference_image_path)
-            face_locations = face_recognition.face_locations(reference_image)
+            face_locations = self.face_detector.detect_faces(reference_image)
             if face_locations:
                 logger.debug(f"Found {len(face_locations)} face(s) in {reference_image_path}")
                 top, right, bottom, left = face_locations[0]
@@ -293,7 +350,8 @@ class ViTClassifier(Classifier):
             logger.error(f"Image not found: {e}", exc_info=True)
             return output
 
-        face_locations_by_image = [face_recognition.face_locations(img) for img in images]
+        logger.info(f"Detecting faces using detection model: {self.face_detector.model}")
+        face_locations_by_image = self.face_detector.detect_faces_batch(images, batch_size=128)
 
         # Initialize output with all detected faces as "Unknown"
         for i, image_path in enumerate(image_paths):
@@ -349,7 +407,7 @@ class ViTClassifier(Classifier):
 
 # --- Classifier Factory ---
 
-def get_classifier(classifier_type, celebrity_data):
+def get_classifier(classifier_type, celebrity_data, face_detection_model=None):
     """
     Factory function to get a classifier instance. This provides a single point
     of entry for creating different types of classifiers.
@@ -358,31 +416,38 @@ def get_classifier(classifier_type, celebrity_data):
         classifier_type (str): The type of classifier to create. 
                                Options: "face_recognition_cnn", "face_recognition_hog", "vit_b32".
         celebrity_data (list): A list of dictionaries, each with "name" and "reference_image_path".
+        face_detection_model (str, optional): The face detection model to use ('cnn' or 'hog').
+                                             If None, uses 'cnn' for face_recognition_cnn and vit_b32,
+                                             and 'hog' for face_recognition_hog.
 
     Returns:
         Classifier: An instance of a Classifier subclass, or None if unavailable.
     """
     logger.info(f"Getting classifier of type: {classifier_type}")
     if classifier_type == "face_recognition_cnn":
+        detection_model = face_detection_model if face_detection_model else "cnn"
         return FaceRecognitionClassifier(
             name="face_recognition_cnn",
             celebrity_data=celebrity_data,
-            model="cnn"
+            face_detection_model=detection_model
         )
     elif classifier_type == "face_recognition_hog":
+        detection_model = face_detection_model if face_detection_model else "hog"
         return FaceRecognitionClassifier(
             name="face_recognition_hog",
             celebrity_data=celebrity_data,
-            model="hog"
+            face_detection_model=detection_model
         )
     elif classifier_type == "vit_b32":
         if not VIT_LIBRARIES_AVAILABLE:
             logger.warning("ViT libraries not found. ViT classifier is unavailable.")
             return None
+        detection_model = face_detection_model if face_detection_model else "cnn"
         return ViTClassifier(
             name="vit_b32",
             celebrity_data=celebrity_data,
-            threshold=0.6
+            threshold=0.6,
+            face_detection_model=detection_model
         )
     else:
         logger.error(f"Unknown classifier type: {classifier_type}")
