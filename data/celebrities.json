@@ -10,5 +10,9 @@
     {
         "name": "Giorgia Meloni",
         "reference_image_path": "Images/references/GiorgiaMeloni.jpg"
+    },
+    {
+        "name": "Lionel Messi",
+        "reference_image_path": "Images/references/LionnelMessi.png"
     }
 ]

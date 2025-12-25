@@ -5,7 +5,7 @@ services:
     volumes:
       - .:/app
     ports:
-      - "2718:2718"
+      - "8501:8501"
     deploy:
       resources:
         reservations:

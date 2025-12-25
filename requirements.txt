@@ -1,4 +1,4 @@
-marimo
+streamlit
 face_recognition
 dlib
 torch
@@ -9,3 +9,4 @@ matplotlib
 pandas
 Pillow
 seaborn
+tqdm

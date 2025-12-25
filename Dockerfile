@@ -28,8 +28,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code into the container
 COPY . .
 
-# Expose the port Marimo runs on (default is 2718, but can be changed)
-EXPOSE 2718
+# Expose the Streamlit default port
+EXPOSE 8501
 
-# The command to run the Marimo application
-CMD ["marimo", "run", "app.py", "--host", "0.0.0.0"]
+# The command to run the Streamlit application
+CMD ["streamlit", "run", "app.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
