@@ -15,10 +15,10 @@ def _():
     import marimo as mo
     import os
     import datetime
-    from classification import get_classifier, load_celebrities_from_json
-    from image_utils import draw_bounding_boxes
+    from src.classification import get_classifier, load_celebrities_from_json
+    from src.image_utils import draw_bounding_boxes
     import tempfile
-    from logging_utils import setup_logger
+    from src.logging_utils import setup_logger
     return (
         get_classifier,
         load_celebrities_from_json,
@@ -61,7 +61,7 @@ def _(mo):
         label="Select Classifier Type"
     )
     celebrities_json_path = mo.ui.text(
-        value="celebrities.json",
+        value="data/celebrities.json",
         label="Path to Celebrities JSON File"
     )
     return celebrities_json_path, classifier_type
@@ -252,7 +252,7 @@ def _(
     test_config_path,
 ):
     def run_tests():
-        from metrics import load_test_config, load_test_set, run_classification_on_test_set, calculate_metrics, plot_confusion_matrix, plot_roc_curve, save_test_output_to_csv
+        from src.metrics import load_test_config, load_test_set, run_classification_on_test_set, calculate_metrics, plot_confusion_matrix, plot_roc_curve, save_test_output_to_csv
 
         logger.info("Starting model testing process.")
 
