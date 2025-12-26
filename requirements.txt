@@ -1,12 +1,14 @@
-streamlit
 face_recognition
-dlib
+# dlib is built manually in Dockerfile
 torch
 timm
-numpy
+numpy==2.0.2
 scikit-learn
 matplotlib
 pandas
 Pillow
 seaborn
 tqdm
+opencv-python-headless
+onnxruntime-gpu
+# insightface is installed from source in Dockerfile

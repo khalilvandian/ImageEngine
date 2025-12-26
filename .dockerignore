@@ -9,3 +9,10 @@ logs/
 image_outputs/
 test_outputs/
 data/*.cache
+Images/
+Archive/
+venv/
+insightface/
+insightface_repo_backup/
+.vscode/
+notebooks/
