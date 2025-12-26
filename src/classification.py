@@ -18,6 +18,7 @@ import tempfile
 import face_recognition
 from src.logging_utils import setup_logger
 import numpy as np
+from tqdm import tqdm
 
 logger = setup_logger()
 
@@ -83,16 +84,30 @@ class FaceDetector:
             list: A list of face locations as (top, right, bottom, left) tuples.
         """
         upsample = number_of_times_to_upsample if number_of_times_to_upsample is not None else self.upsample
-        face_locations = face_recognition.face_locations(image, model=self.model, number_of_times_to_upsample=upsample)
+        try:
+            face_locations = face_recognition.face_locations(
+                image, model=self.model, number_of_times_to_upsample=upsample
+            )
+        except Exception as e:
+            logger.error(f"Face detection failed with model={self.model}: {e}", exc_info=True)
+            return []
         
         # Multi-pass detection: if no faces found and multi-pass enabled, try with higher upsampling
         if not face_locations and self.enable_multi_pass and upsample < 3:
-            logger.debug(f"No faces found with upsample={upsample}, retrying with upsample={upsample + 1}")
-            face_locations = face_recognition.face_locations(image, model=self.model, number_of_times_to_upsample=upsample + 1)
+            logger.debug(
+                f"No faces found with upsample={upsample}, retrying with upsample={upsample + 1}"
+            )
+            try:
+                face_locations = face_recognition.face_locations(
+                    image, model=self.model, number_of_times_to_upsample=upsample + 1
+                )
+            except Exception as e:
+                logger.error(f"Face detection retry failed with model={self.model}: {e}", exc_info=True)
+                return []
         
         return face_locations
     
-    def detect_faces_batch(self, images, batch_size=128, number_of_times_to_upsample=None):
+    def detect_faces_batch(self, images, batch_size=32, number_of_times_to_upsample=None):
         """
         Detects faces in a batch of images for efficiency.
         
@@ -107,31 +122,85 @@ class FaceDetector:
         upsample = number_of_times_to_upsample if number_of_times_to_upsample is not None else self.upsample
         
         if self.model == "cnn":
-            # Use batch processing for CNN (more efficient)
-            face_locations_batch = face_recognition.batch_face_locations(
-                images,
-                number_of_times_to_upsample=upsample,
-                batch_size=batch_size
-            )
-            
-            # Multi-pass detection: retry images with no faces found
-            if self.enable_multi_pass and upsample < 3:
-                retry_indices = [i for i, locs in enumerate(face_locations_batch) if not locs]
-                if retry_indices:
-                    logger.debug(f"Retrying {len(retry_indices)} images with no faces using upsample={upsample + 1}")
-                    retry_images = [images[i] for i in retry_indices]
-                    retry_results = face_recognition.batch_face_locations(
-                        retry_images,
-                        number_of_times_to_upsample=upsample + 1,
-                        batch_size=batch_size
+            # Allow disabling batch mode entirely via env var
+            disable_batch = os.getenv("FR_CNN_BATCH", "1") != "1"
+            group_batch_default = 4
+            try:
+                group_batch_size = int(os.getenv("FR_CNN_GROUP_BATCH", str(group_batch_default)))
+            except ValueError:
+                group_batch_size = group_batch_default
+            if disable_batch:
+                return [self.detect_faces(img, number_of_times_to_upsample=upsample) for img in images]
+            # CNN batch detector requires all images in the batch to have same dimensions.
+            # Group images by (height, width) and process each group separately.
+            dims_to_indices = {}
+            for idx, img in enumerate(images):
+                try:
+                    h, w = img.shape[0], img.shape[1]
+                except Exception:
+                    h, w = None, None
+                dims_to_indices.setdefault((h, w), []).append(idx)
+
+            results = [[] for _ in images]
+            for (h, w), group_idxs in dims_to_indices.items():
+                group_imgs = [images[i] for i in group_idxs]
+                if h is None or w is None or not group_imgs:
+                    # Fallback to per-image detection for malformed entries
+                    for i in group_idxs:
+                        results[i] = self.detect_faces(images[i], number_of_times_to_upsample=upsample)
+                    continue
+
+                try:
+                    group_results = face_recognition.batch_face_locations(
+                        group_imgs,
+                        number_of_times_to_upsample=upsample,
+                        batch_size=min(group_batch_size, len(group_imgs)),
                     )
-                    # Update the original results
-                    for idx, retry_idx in enumerate(retry_indices):
-                        if retry_results[idx]:  # If faces were found on retry
-                            face_locations_batch[retry_idx] = retry_results[idx]
-                            logger.debug(f"Found {len(retry_results[idx])} face(s) on retry for image {retry_idx}")
-            
-            return face_locations_batch
+                except Exception as e:
+                    logger.warning(
+                        f"CNN batch detector failed for group ({h}x{w}) ({e}). Using per-image CNN.",
+                        exc_info=True,
+                    )
+                    group_results = [
+                        self.detect_faces(img, number_of_times_to_upsample=upsample) for img in group_imgs
+                    ]
+
+                # Multi-pass retry for empty detections within this group
+                if self.enable_multi_pass and upsample < 3:
+                    retry_local_idxs = [i for i, locs in enumerate(group_results) if not locs]
+                    if retry_local_idxs:
+                        retry_imgs = [group_imgs[i] for i in retry_local_idxs]
+                        try:
+                            retry_results = face_recognition.batch_face_locations(
+                                retry_imgs,
+                                number_of_times_to_upsample=upsample + 1,
+                                batch_size=min(batch_size, len(retry_imgs)),
+                            )
+                            for j, local_idx in enumerate(retry_local_idxs):
+                                if retry_results[j]:
+                                    group_results[local_idx] = retry_results[j]
+                        except Exception as e:
+                            logger.warning(
+                                f"CNN retry batch failed for group ({h}x{w}) ({e}). Using per-image retry.",
+                                exc_info=True,
+                            )
+                            for local_idx in retry_local_idxs:
+                                try:
+                                    group_results[local_idx] = face_recognition.face_locations(
+                                        group_imgs[local_idx], model=self.model, number_of_times_to_upsample=upsample + 1
+                                    )
+                                except Exception as e2:
+                                    logger.error(
+                                        f"CNN per-image retry failed for ({h}x{w}) image index {local_idx}: {e2}",
+                                        exc_info=True,
+                                    )
+                                    group_results[local_idx] = []
+
+                # Place group results back into overall results list
+                for local_idx, global_idx in enumerate(group_idxs):
+                    results[global_idx] = group_results[local_idx]
+
+            return results
         else:
             # HOG doesn't have native batch support, process sequentially
             return [self.detect_faces(img, number_of_times_to_upsample=upsample) for img in images]
@@ -235,23 +304,82 @@ class FaceRecognitionClassifier(Classifier):
             logger.error(f"Reference image not found at {reference_image_path}: {e}", exc_info=True)
             return []
 
-    def classify_images(self, image_paths):
+    def classify_images(self, image_paths, image_batch_size=None, detection_batch_size=None):
         logger.info(f"Batch detecting celebrities in {len(image_paths)} images using {self.name}")
         if not self.known_face_encodings:
             logger.warning("No known face encodings to compare against.")
-            # Still process images to find all faces, just label them as "Unknown"
-            # return {path: [] for path in image_paths}
-
-        images = [face_recognition.load_image_file(p) for p in image_paths]
-        
-        logger.info(f"Finding face locations in batch using detection model: {self.face_detector.model} with upsample={self.face_detector.upsample}")
-        batch_face_locations = self.face_detector.detect_faces_batch(images, batch_size=128)
 
         output = {}
-        for i, image_path in enumerate(image_paths):
-            face_locations = batch_face_locations[i]
-            image = images[i]
-            
+
+        # Allow environment overrides for batch sizes
+        if image_batch_size is None:
+            try:
+                image_batch_size = int(os.getenv("FR_IMAGE_BATCH", "4"))
+            except ValueError:
+                image_batch_size = 4
+        if detection_batch_size is None:
+            try:
+                detection_batch_size = int(os.getenv("FR_DETECT_BATCH", "4"))
+            except ValueError:
+                detection_batch_size = 4
+
+        # Phase 1: detect faces and store locations only
+        locations_map = {}
+        prog_detect = tqdm(total=len(image_paths), desc=f"Detecting faces ({self.name})", unit="img")
+        for start in range(0, len(image_paths), image_batch_size):
+            batch_paths = image_paths[start:start + image_batch_size]
+
+            images = []
+            valid_paths = []
+            for path in batch_paths:
+                try:
+                    images.append(face_recognition.load_image_file(path))
+                    valid_paths.append(path)
+                except FileNotFoundError:
+                    logger.error(f"Image not found: {path}", exc_info=True)
+                    locations_map[path] = []
+
+            if not images:
+                continue
+
+            logger.info(
+                f"Finding face locations for batch size {len(images)} using detection model: {self.face_detector.model} "
+                f"with upsample={self.face_detector.upsample}"
+            )
+            batch_face_locations = self.face_detector.detect_faces_batch(
+                images,
+                batch_size=min(detection_batch_size, len(images)),
+            )
+
+            for i, image_path in enumerate(valid_paths):
+                locations_map[image_path] = batch_face_locations[i]
+
+            del images
+            del batch_face_locations
+            prog_detect.update(len(valid_paths))
+        prog_detect.close()
+
+        # Optionally free detector reference
+        try:
+            del self.face_detector
+        except Exception:
+            pass
+
+        # Phase 2: identification using stored locations
+        prog_ident = tqdm(total=len(image_paths), desc=f"Identifying faces ({self.name})", unit="img")
+        for image_path in image_paths:
+            face_locations = locations_map.get(image_path, [])
+            if not face_locations:
+                output[image_path] = []
+                continue
+
+            try:
+                image = face_recognition.load_image_file(image_path)
+            except FileNotFoundError:
+                logger.error(f"Image not found: {image_path}", exc_info=True)
+                output[image_path] = []
+                continue
+
             logger.debug(f"Found {len(face_locations)} face(s) in {image_path}")
             face_encodings = face_recognition.face_encodings(image, face_locations)
 
@@ -259,28 +387,28 @@ class FaceRecognitionClassifier(Classifier):
             for j, face_encoding in enumerate(face_encodings):
                 name = "Unknown"
                 if self.known_face_encodings:
-                    logger.debug(f"Comparing face {j+1}/{len(face_encodings)} in {image_path} with known encodings.")
                     matches = face_recognition.compare_faces(
                         self.known_face_encodings,
                         face_encoding,
-                        tolerance=self.tolerance
+                        tolerance=self.tolerance,
                     )
-                    
-                    face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
+                    face_distances = face_recognition.face_distance(
+                        self.known_face_encodings, face_encoding
+                    )
                     best_match_index = np.argmin(face_distances)
-
                     if matches[best_match_index]:
                         name = self.known_face_names[best_match_index]
-                        logger.debug(f"Match found for face {j+1} in {image_path}: {name}")
-                
+
                 all_detections.append({
                     "name": name,
-                    "location": face_locations[j]
+                    "location": face_locations[j],
                 })
-            
-            output[image_path] = all_detections
-            logger.debug(f"Detected faces in {image_path}: {all_detections}")
 
+            output[image_path] = all_detections
+            prog_ident.update(1)
+            del image
+
+        prog_ident.close()
         return output
 
 # --- Vision Transformer (ViT) Classifier ---
@@ -379,75 +507,162 @@ class ViTClassifier(Classifier):
             logger.error(f'Reference image not found at {reference_image_path}')
             return None
 
-    def classify_images(self, image_paths):
+    def classify_images(self, image_paths, image_batch_size=None, face_batch_size=None, detection_batch_size=None):
         logger.info(f"Batch detecting celebrities in {len(image_paths)} images using {self.name}")
 
         output = {path: [] for path in image_paths}
-        
-        try:
-            images = [face_recognition.load_image_file(p) for p in image_paths]
-        except FileNotFoundError as e:
-            logger.error(f"Image not found: {e}", exc_info=True)
-            return output
-
-        logger.info(f"Detecting faces using detection model: {self.face_detector.model} with upsample={self.face_detector.upsample}")
-        face_locations_by_image = self.face_detector.detect_faces_batch(images, batch_size=128)
-
-        # Initialize output with all detected faces as "Unknown"
-        for i, image_path in enumerate(image_paths):
-            for face_location in face_locations_by_image[i]:
-                output[image_path].append({
-                    "name": "Unknown",
-                    "location": face_location
-                })
-
-        face_batch = []
-        face_indices = [] # To map faces back to their original images
-
-        for i, (image, face_locations) in enumerate(zip(images, face_locations_by_image)):
-            for j, (top, right, bottom, left) in enumerate(face_locations):
-                face_image = image[top:bottom, left:right]
-                face_pil = Image.fromarray(face_image)
-                face_batch.append(self.transform(face_pil))
-                face_indices.append({'image_index': i, 'face_location': (top, right, bottom, left), 'face_in_image_index': j})
-        
-        if not face_batch:
-            logger.info("No faces found in any of the images.")
-            return output
 
         if not self.reference_embeddings:
             logger.warning("No reference embeddings to compare against.")
             return output
 
-        face_tensors = torch.stack(face_batch).to(self.device)
-        
-        logger.debug(f"Processing a batch of {len(face_tensors)} faces.")
-        with torch.no_grad():
-            embeddings = self.model.forward_features(face_tensors)
-            embeddings = embeddings[:, 0].cpu().numpy()
+        # Allow environment overrides for batch sizes
+        if image_batch_size is None:
+            try:
+                image_batch_size = int(os.getenv("VIT_IMAGE_BATCH", "4"))
+            except ValueError:
+                image_batch_size = 4
+        if face_batch_size is None:
+            try:
+                face_batch_size = int(os.getenv("VIT_FACE_BATCH", "8"))
+            except ValueError:
+                face_batch_size = 8
+        if detection_batch_size is None:
+            try:
+                detection_batch_size = int(os.getenv("FR_DETECT_BATCH", "4"))
+            except ValueError:
+                detection_batch_size = 4
 
-        for i, embedding in enumerate(embeddings):
-            cosine_similarities = [np.dot(ref_embedding, embedding) / (norm(ref_embedding) * norm(embedding)) for ref_embedding in self.reference_embeddings]
-            best_match_index = np.argmax(cosine_similarities)
+        def process_face_batch(face_tensors, face_indices, batch_paths):
+            if not face_tensors:
+                return
+            face_tensor = torch.stack(face_tensors).to(self.device)
+            logger.debug(f"Processing a batch of {len(face_tensor)} faces.")
+            with torch.no_grad():
+                embeddings = self.model.forward_features(face_tensor)
+                embeddings = embeddings[:, 0].cpu().numpy()
 
-            if cosine_similarities[best_match_index] > self.threshold:
-                celebrity_name = self.reference_names[best_match_index]
-                original_image_index = face_indices[i]['image_index']
-                face_in_image_index = face_indices[i]['face_in_image_index']
-                image_path = image_paths[original_image_index]
-                
-                logger.debug(f"Match found for a face in {image_path}: {celebrity_name} with similarity {cosine_similarities[best_match_index]}")
-                
-                output[image_path][face_in_image_index]['name'] = celebrity_name
+            for embedding, info in zip(embeddings, face_indices):
+                cosine_similarities = [
+                    np.dot(ref_embedding, embedding) / (norm(ref_embedding) * norm(embedding))
+                    for ref_embedding in self.reference_embeddings
+                ]
+                best_match_index = np.argmax(cosine_similarities)
+
+                if cosine_similarities[best_match_index] > self.threshold:
+                    celebrity_name = self.reference_names[best_match_index]
+                    image_path = batch_paths[info['image_index']]
+                    face_in_image_index = info['face_in_image_index']
+                    logger.debug(
+                        f"Match found for a face in {image_path}: {celebrity_name} "
+                        f"with similarity {cosine_similarities[best_match_index]}"
+                    )
+                    output[image_path][face_in_image_index]['name'] = celebrity_name
+
+            del face_tensor
+            if self.device.type == 'cuda':
+                torch.cuda.empty_cache()
+
+        # Phase 1: detect faces and store locations only
+        prog_detect = tqdm(total=len(image_paths), desc=f"Detecting faces ({self.name})", unit="img")
+        locations_map = {}
+        for start in range(0, len(image_paths), image_batch_size):
+            batch_paths = image_paths[start:start + image_batch_size]
+            images = []
+            for path in batch_paths:
+                try:
+                    images.append(face_recognition.load_image_file(path))
+                except FileNotFoundError:
+                    logger.error(f"Image not found: {path}", exc_info=True)
+                    locations_map[path] = []
+                    images.append(None)
+
+            valid_images = [img for img in images if img is not None]
+            if not valid_images:
+                continue
+
+            logger.info(
+                f"Detecting faces for batch size {len(valid_images)} using detection model: {self.face_detector.model} "
+                f"with upsample={self.face_detector.upsample}"
+            )
+            face_locations_by_image = self.face_detector.detect_faces_batch(
+                valid_images,
+                batch_size=min(detection_batch_size, len(valid_images)),
+            )
+
+            valid_idx = 0
+            for path, image in zip(batch_paths, images):
+                if image is None:
+                    continue
+                face_locations = face_locations_by_image[valid_idx]
+                valid_idx += 1
+                locations_map[path] = face_locations
+
+            del images
+            del face_locations_by_image
+            prog_detect.update(len(batch_paths))
+
+        prog_detect.close()
+
+        # Optionally free detector reference
+        try:
+            del self.face_detector
+        except Exception:
+            pass
+
+        # Phase 2: build face tensors and run embeddings separately
+        prog_ident = tqdm(total=len(image_paths), desc=f"Embedding & identification ({self.name})", unit="img")
+        for start in range(0, len(image_paths), image_batch_size):
+            batch_paths = image_paths[start:start + image_batch_size]
+            face_tensors = []
+            face_indices = []
+
+            for img_idx, path in enumerate(batch_paths):
+                face_locations = locations_map.get(path, [])
+                if not face_locations:
+                    continue
+                try:
+                    image = face_recognition.load_image_file(path)
+                except FileNotFoundError:
+                    logger.error(f"Image not found: {path}", exc_info=True)
+                    continue
+
+                # Initialize output with Unknown
+                if not output[path]:
+                    for face_location in face_locations:
+                        output[path].append({
+                            "name": "Unknown",
+                            "location": face_location,
+                        })
+
+                for face_in_image_index, (top, right, bottom, left) in enumerate(face_locations):
+                    face_image = image[top:bottom, left:right]
+                    face_pil = Image.fromarray(face_image)
+                    face_tensors.append(self.transform(face_pil))
+                    face_indices.append({
+                        'image_index': img_idx,
+                        'face_in_image_index': face_in_image_index,
+                    })
+
+                    if len(face_tensors) >= face_batch_size:
+                        process_face_batch(face_tensors, face_indices, batch_paths)
+                        face_tensors = []
+                        face_indices = []
+
+            # Process remaining faces
+            process_face_batch(face_tensors, face_indices, batch_paths)
+            prog_ident.update(len(batch_paths))
+
+        prog_ident.close()
 
         for path, results in output.items():
             logger.debug(f"Detected faces in {path}: {results}")
-            
+
         return output
 
 # --- Classifier Factory ---
 
-def get_classifier(classifier_type, celebrity_data, face_detection_model=None):
+def get_classifier(classifier_type, celebrity_data, face_detection_model=None, detection_upsample=None, enable_multi_pass=None):
     """
     Factory function to get a classifier instance. This provides a single point
     of entry for creating different types of classifiers.
@@ -466,17 +681,36 @@ def get_classifier(classifier_type, celebrity_data, face_detection_model=None):
     logger.info(f"Getting classifier of type: {classifier_type}")
     if classifier_type == "face_recognition_cnn":
         detection_model = face_detection_model if face_detection_model else "cnn"
+        # Resolve upsample/multi-pass with env overrides if not explicitly provided
+        if detection_upsample is None:
+            try:
+                detection_upsample = int(os.getenv("FR_UPSAMPLE", "1"))
+            except ValueError:
+                detection_upsample = 1
+        if enable_multi_pass is None:
+            enable_multi_pass = False
         return FaceRecognitionClassifier(
             name="face_recognition_cnn",
             celebrity_data=celebrity_data,
-            face_detection_model=detection_model
+            face_detection_model=detection_model,
+            detection_upsample=detection_upsample,
+            enable_multi_pass=enable_multi_pass,
         )
     elif classifier_type == "face_recognition_hog":
         detection_model = face_detection_model if face_detection_model else "hog"
+        if detection_upsample is None:
+            try:
+                detection_upsample = int(os.getenv("FR_UPSAMPLE", "1"))
+            except ValueError:
+                detection_upsample = 1
+        if enable_multi_pass is None:
+            enable_multi_pass = False
         return FaceRecognitionClassifier(
             name="face_recognition_hog",
             celebrity_data=celebrity_data,
-            face_detection_model=detection_model
+            face_detection_model=detection_model,
+            detection_upsample=detection_upsample,
+            enable_multi_pass=enable_multi_pass,
         )
     elif classifier_type == "vit_b32":
         if not VIT_LIBRARIES_AVAILABLE:

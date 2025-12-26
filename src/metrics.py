@@ -1,17 +1,20 @@
 import os
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
-from sklearn.preprocessing import MultiLabelBinarizer
-from src.classification import get_classifier, load_celebrities_from_json
 import json
-import matplotlib.pyplot as plt
-import seaborn as sns
 import io
 import base64
-import pandas as pd
 import datetime
+
+import face_recognition
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.preprocessing import MultiLabelBinarizer
+from tqdm import tqdm
+
+from src.classification import FaceDetector, get_classifier, load_celebrities_from_json
 from src.image_utils import draw_bounding_boxes
 from src.logging_utils import setup_logger
-from tqdm import tqdm
 
 logger = setup_logger()
 
@@ -64,9 +67,8 @@ def run_classification_on_test_set(classifier, image_paths, output_image_dir=Non
     total_images = len(image_paths)
     logger.info(f"Running classification on {total_images} test images with {classifier.name}")
 
-    all_detections = []
-    
     # If output_image_dir is provided, create a unique subdirectory for this test run
+    full_output_dir = None
     if output_image_dir:
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         experiment_folder_name = f"{timestamp}_{classifier.name}_test_tolerance_{getattr(classifier, 'tolerance', 'N-A')}_threshold_{getattr(classifier, 'threshold', 'N-A')}"
@@ -74,22 +76,115 @@ def run_classification_on_test_set(classifier, image_paths, output_image_dir=Non
         os.makedirs(full_output_dir, exist_ok=True)
         logger.info(f"Test output images will be saved to: {full_output_dir}")
 
-    progress = tqdm(image_paths, desc="Classifying", unit="img")
-    for image_path in progress:
-        results = classifier.detect_celebrity(image_path)
-        detected_names = [result['name'] for result in results]
+    # Batch classify to allow classifiers to serialize detection/identification internally
+    results_by_image = classifier.classify_images(image_paths)
+
+    all_detections = []
+    for image_path in image_paths:
+        results = results_by_image.get(image_path, [])
+        detected_names = [r.get('name', 'Unknown') for r in results]
         all_detections.append(detected_names)
-        progress.set_postfix({'last': os.path.basename(image_path)})
         
-        if output_image_dir:
-            annotated_image = draw_bounding_boxes(image_path, results)
-            filename = os.path.basename(image_path)
-            output_path = os.path.join(full_output_dir, filename)
-            annotated_image.save(output_path)
-            logger.debug(f"Saved annotated test image to {output_path}")
+        if full_output_dir:
+            try:
+                annotated_image = draw_bounding_boxes(image_path, results)
+                filename = os.path.basename(image_path)
+                output_path = os.path.join(full_output_dir, filename)
+                annotated_image.save(output_path)
+                logger.debug(f"Saved annotated test image to {output_path}")
+            except Exception as e:
+                logger.error(f"Failed to save annotated image for {image_path}: {e}", exc_info=True)
 
     logger.info("Completed test set classification.")
     return all_detections
+
+
+def run_face_detection_on_test_set(detector_model, image_paths, output_image_dir=None, detection_upsample=None, enable_multi_pass=False):
+    """Runs face detection only and optionally saves annotated images.
+
+    Returns a tuple of detections map and the output directory used (or None).
+    """
+    total_images = len(image_paths)
+    logger.info(f"Running face detection on {total_images} images with detector={detector_model}")
+
+    if detection_upsample is None:
+        try:
+            detection_upsample = int(os.getenv("FR_UPSAMPLE", "1"))
+        except ValueError:
+            detection_upsample = 1
+
+    try:
+        image_batch_size = int(os.getenv("FR_IMAGE_BATCH", "4"))
+    except ValueError:
+        image_batch_size = 4
+
+    try:
+        detection_batch_size = int(os.getenv("FR_DETECT_BATCH", "4"))
+    except ValueError:
+        detection_batch_size = 4
+
+    detector = FaceDetector(
+        model=detector_model,
+        upsample=detection_upsample,
+        enable_multi_pass=enable_multi_pass,
+    )
+
+    full_output_dir = None
+    if output_image_dir:
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        experiment_folder_name = f"{timestamp}_{detector_model}_only-faceDetector_upsample_{detection_upsample}"
+        full_output_dir = os.path.join(output_image_dir, experiment_folder_name)
+        os.makedirs(full_output_dir, exist_ok=True)
+        logger.info(f"Face detection output images will be saved to: {full_output_dir}")
+
+    detections_map = {}
+    prog_detect = tqdm(total=total_images, desc=f"Detecting faces ({detector_model})", unit="img")
+
+    for start in range(0, total_images, image_batch_size):
+        batch_paths = image_paths[start:start + image_batch_size]
+        images = []
+        valid_paths = []
+
+        for path in batch_paths:
+            try:
+                images.append(face_recognition.load_image_file(path))
+                valid_paths.append(path)
+            except FileNotFoundError:
+                logger.error(f"Image not found: {path}", exc_info=True)
+                detections_map[path] = []
+
+        if not images:
+            prog_detect.update(len(batch_paths))
+            continue
+
+        face_locations_batch = detector.detect_faces_batch(
+            images,
+            batch_size=min(detection_batch_size, len(images)),
+        )
+
+        for i, image_path in enumerate(valid_paths):
+            locations = face_locations_batch[i] if i < len(face_locations_batch) else []
+            detections_map[image_path] = [
+                {"name": "Face", "location": loc} for loc in locations
+            ]
+
+        prog_detect.update(len(batch_paths))
+
+    prog_detect.close()
+
+    if full_output_dir:
+        for image_path, detections in detections_map.items():
+            try:
+                annotated_image = draw_bounding_boxes(image_path, detections)
+                filename = os.path.basename(image_path)
+                output_path = os.path.join(full_output_dir, filename)
+                annotated_image.save(output_path)
+                logger.debug(f"Saved face detection image to {output_path}")
+            except Exception as e:
+                logger.error(f"Failed to save annotated detection image for {image_path}: {e}", exc_info=True)
+
+    logger.info("Completed face detection run.")
+    return detections_map, full_output_dir
 
 def normalize_detections_for_metrics(ground_truth_labels, all_detections):
     """

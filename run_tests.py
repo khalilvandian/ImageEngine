@@ -8,11 +8,13 @@ Usage:
 """
 
 import argparse
+import os
 import json
 import sys
 from src.metrics import (
     load_test_set,
     run_classification_on_test_set,
+    run_face_detection_on_test_set,
     calculate_metrics,
     save_test_output_to_csv,
 )
@@ -20,9 +22,19 @@ from src.classification import get_classifier, load_celebrities_from_json
 from src.logging_utils import setup_logger
 
 logger = setup_logger()
+# Limit thread usage to reduce memory contention
+os.environ.setdefault("OMP_NUM_THREADS", "1")
+os.environ.setdefault("OPENBLAS_NUM_THREADS", "1")
+os.environ.setdefault("MKL_NUM_THREADS", "1")
+os.environ.setdefault("NUMEXPR_NUM_THREADS", "1")
+os.environ.setdefault("FR_SERIALIZE", "1")
+os.environ.setdefault("VIT_SERIALIZE", "1")
+os.environ.setdefault("FR_IMAGE_BATCH", "4")
+os.environ.setdefault("FR_DETECT_BATCH", "4")
+os.environ.setdefault("FR_CNN_GROUP_BATCH", "4")
 
 
-def run_test(model_name, testset_path, celebrities_path, output_dir="test_outputs"):
+def run_test(model_name, testset_path, celebrities_path, output_dir="image_outputs", save_images=True):
     """Run a single test with the specified model."""
     print(f"\n{'='*60}")
     print(f"Running {model_name.upper()} model test")
@@ -52,7 +64,9 @@ def run_test(model_name, testset_path, celebrities_path, output_dir="test_output
     # Run predictions
     print(f"\n🔄 Running predictions...")
     predictions = run_classification_on_test_set(
-        classifier, image_paths, output_image_dir=output_dir
+        classifier,
+        image_paths,
+        output_image_dir=output_dir if save_images else None,
     )
     
     # Calculate metrics
@@ -74,6 +88,37 @@ def run_test(model_name, testset_path, celebrities_path, output_dir="test_output
     print(f"{'='*60}\n")
     
     return metrics
+
+
+def run_detector_test(detector_model, testset_path, output_dir="image_outputs", save_images=True):
+    """Run detection-only test using FaceDetector."""
+    print(f"\n{'='*60}")
+    print(f"Running FACE DETECTOR ({detector_model.upper()}) test")
+    print(f"{'='*60}")
+
+    image_paths, _ = load_test_set(testset_path)
+    print(f"✓ Loaded {len(image_paths)} images from {testset_path}")
+
+    if not image_paths:
+        print("❌ No images found in test set!")
+        return None
+
+    print("\n🔄 Running face detection...")
+    detections_map, output_dir_used = run_face_detection_on_test_set(
+        detector_model,
+        image_paths,
+        output_dir if save_images else None,
+    )
+
+    total_faces = sum(len(v) for v in detections_map.values())
+    max_faces = max((len(v) for v in detections_map.values()), default=0)
+    print(f"\nTotal detected faces: {total_faces}")
+    print(f"Max faces in a single image: {max_faces}")
+    if save_images and output_dir_used:
+        print(f"Annotated images saved under: {output_dir_used}")
+
+    print(f"{'='*60}\n")
+    return detections_map
 
 
 def main():
@@ -107,6 +152,20 @@ Examples:
         default="hog",
         help="Model to test (default: hog)",
     )
+
+    parser.add_argument(
+        "--detector-only",
+        action="store_true",
+        help="Run detection-only test (skip recognition)",
+    )
+
+    parser.add_argument(
+        "--detector-model",
+        type=str,
+        choices=["cnn", "hog"],
+        default="cnn",
+        help="Face detector model for detection-only mode (default: cnn)",
+    )
     
     parser.add_argument(
         "--testset",
@@ -125,14 +184,27 @@ Examples:
     parser.add_argument(
         "--output-dir",
         type=str,
-        default="test_outputs",
-        help="Directory to save output images (default: test_outputs)",
+        default="image_outputs",
+        help="Directory to save output images (default: image_outputs)",
+    )
+
+    parser.add_argument(
+        "--no-images",
+        action="store_true",
+        help="Disable saving annotated images (images saved by default)",
     )
     
     parser.add_argument(
         "--quick",
         action="store_true",
         help="Run quick test with HOG model (same as --model hog)",
+    )
+
+    parser.add_argument(
+        "--upsample",
+        type=int,
+        default=None,
+        help="Face detection upsample for CNN/HOG (e.g., 2)",
     )
     
     args = parser.parse_args()
@@ -141,6 +213,21 @@ Examples:
     if args.quick:
         args.model = "hog"
         print("🚀 Quick test mode: Using HOG model for fast testing\n")
+
+    # Apply upsample override if provided
+    if args.upsample is not None:
+        os.environ["FR_UPSAMPLE"] = str(args.upsample)
+
+    # Detector-only run short-circuits classification
+    if args.detector_only:
+        run_detector_test(
+            args.detector_model,
+            args.testset,
+            args.output_dir,
+            save_images=not args.no_images,
+        )
+        print("✅ Detection-only testing completed successfully!")
+        return
     
     # Map model names
     model_map = {
@@ -155,7 +242,11 @@ Examples:
             results = {}
             for short_name, full_name in model_map.items():
                 metrics = run_test(
-                    full_name, args.testset, args.celebrities, args.output_dir
+                    full_name,
+                    args.testset,
+                    args.celebrities,
+                    args.output_dir,
+                    save_images=not args.no_images,
                 )
                 if metrics:
                     results[short_name] = metrics
@@ -175,7 +266,13 @@ Examples:
                 print(f"{'='*60}\n")
         else:
             full_model_name = model_map[args.model]
-            run_test(full_model_name, args.testset, args.celebrities, args.output_dir)
+            run_test(
+                full_model_name,
+                args.testset,
+                args.celebrities,
+                args.output_dir,
+                save_images=not args.no_images,
+            )
         
         print("✅ Testing completed successfully!")
         
