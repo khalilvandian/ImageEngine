@@ -6,6 +6,7 @@ services:
       - .:/app
     ports:
       - "8501:8501"
+    command: tail -f /dev/null
     deploy:
       resources:
         reservations:

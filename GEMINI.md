@@ -16,6 +16,8 @@ ImageEngine is a Python-based application for detecting and recognizing celebrit
     *   `PyTorch`: Used by the Vision Transformer (ViT) model.
     *   `timm`: (PyTorch Image Models) Used to create the ViT model.
     *   `scikit-learn`: For calculating performance metrics.
+    *   `insightface`: (Experimental) State-of-the-art 2D/3D face analysis library.
+    *   `onnxruntime-gpu`: For accelerating InsightFace models.
 *   **Containerization:** Docker, Docker Compose
 *   **Image Processing:** Pillow
 *   **Data Handling:** pandas, numpy, tqdm
@@ -89,6 +91,9 @@ Running without Docker is not recommended due to the specific `dlib` compilation
 *   **`Images/`:** Contains image datasets.
 *   **`image_outputs/`:** Default directory for saving annotated images.
 *   **`test_outputs/`:** Default directory for saving test result CSVs.
+*   **`insightface/` & `insightface-test/`:** Directories for experimental InsightFace integration and testing.
+*   **`notebooks/`:** Jupyter notebooks for experiments (e.g., `retina-face-test.ipynb`).
+*   **`check_insightface_gpu.py`:** Utility script to verify InsightFace GPU acceleration.
 
 ### Batch Processing & Memory Management
 
