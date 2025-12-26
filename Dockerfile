@@ -6,9 +6,12 @@ WORKDIR /app
 
 # Install system dependencies required for dlib and other libraries
 RUN apt-get update && apt-get install -y \
+    git \
+    git-lfs \
     cmake \
     build-essential \
     fonts-liberation \
+    && git lfs install --system \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone and install dlib from source to ensure it's compiled with CUDA support
