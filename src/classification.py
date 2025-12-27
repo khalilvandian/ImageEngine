@@ -19,6 +19,15 @@ import face_recognition
 from src.logging_utils import setup_logger
 import numpy as np
 from tqdm import tqdm
+import cv2
+
+# InsightFace imports (optional, with fallback)
+try:
+    from insightface.app import FaceAnalysis
+    import onnxruntime as ort
+    INSIGHTFACE_AVAILABLE = True
+except ImportError:
+    INSIGHTFACE_AVAILABLE = False
 
 logger = setup_logger()
 
@@ -50,39 +59,102 @@ def load_celebrities_from_json(json_path):
 
 class FaceDetector:
     """
-    A modular face detector that can use different detection models (CNN or HOG).
+    A modular face detector supporting multiple detection models:
+    - CNN/HOG (face_recognition library)
+    - InsightFace model zoo: buffalo_l, buffalo_m, buffalo_s, antelopev2
+    
     Separates face detection from face recognition/identification.
     """
-    def __init__(self, model="cnn", upsample=2, enable_multi_pass=True):
+    
+    # InsightFace model zoo names
+    INSIGHTFACE_MODELS = {"buffalo_l", "buffalo_m", "buffalo_s", "antelopev2"}
+    LEGACY_MODELS = {"cnn", "hog"}
+    VALID_MODELS = INSIGHTFACE_MODELS | LEGACY_MODELS
+    
+    def __init__(self, model="buffalo_l", upsample=2, enable_multi_pass=True, det_size=(640, 640)):
         """
         Initializes the FaceDetector.
         
         Args:
-            model (str): The face detection model to use ('cnn' or 'hog').
-                        CNN is more accurate but slower, HOG is faster but less accurate.
-            upsample (int): How many times to upsample the image for detection.
+            model (str): The face detection model to use. Options:
+                        InsightFace Model Zoo (recommended):
+                        - 'buffalo_l': SCRFD-10GF (326MB, default) - highest accuracy, ~91.25% IJB-B
+                        - 'buffalo_m': SCRFD-2.5GF (313MB) - same accuracy as buffalo_l, faster
+                        - 'buffalo_s': SCRFD-500MF (159MB) - lightweight, lower accuracy ~71.87%
+                        - 'antelopev2': SCRFD-10GF (407MB) - alternative high-end model
+                        Legacy (face_recognition):
+                        - 'cnn': CNN detector, more accurate but slower
+                        - 'hog': HOG detector, faster but less accurate
+            upsample (int): How many times to upsample the image (for CNN/HOG only).
                            Higher values (2-3) detect smaller faces but are slower.
-                           Recommended: 2 for general use, 3 for very small faces, 1 for speed.
+                           Recommended: 2 for general use, 3 for small faces, 1 for speed.
             enable_multi_pass (bool): If True and no faces found, retry with higher upsampling.
+            det_size (tuple): Detection size for InsightFace models (width, height).
+                             Default (640, 640) provides good balance. Larger sizes detect smaller faces.
         """
-        if model not in ["cnn", "hog"]:
-            raise ValueError(f"Invalid face detection model: {model}. Must be 'cnn' or 'hog'.")
+        if model not in self.VALID_MODELS:
+            raise ValueError(f"Invalid face detection model: {model}. Must be one of {self.VALID_MODELS}")
+        
+        if model in self.INSIGHTFACE_MODELS and not INSIGHTFACE_AVAILABLE:
+            logger.warning(f"InsightFace not available, falling back to CNN model")
+            model = "cnn"
+        
         self.model = model
         self.upsample = upsample
         self.enable_multi_pass = enable_multi_pass
-        logger.info(f"FaceDetector initialized with model: {model}, upsample: {upsample}, multi-pass: {enable_multi_pass}")
+        self.det_size = det_size
+        self.insightface_app = None
+        
+        # Initialize InsightFace if selected
+        if self.model in self.INSIGHTFACE_MODELS:
+            self.insightface_app = self._init_insightface()
+        
+        logger.info(f"FaceDetector initialized with model: {model}, det_size: {det_size}, multi-pass: {enable_multi_pass}")
+    
+    def _init_insightface(self):
+        """
+        Initializes InsightFace model zoo with GPU/CPU fallback logic.
+        Automatically uses the specified model from the model zoo (buffalo_l, buffalo_m, buffalo_s, antelopev2).
+        
+        Returns:
+            FaceAnalysis: Initialized InsightFace app for face detection with the specified model.
+        """
+        available = ort.get_available_providers()
+        prefer_cuda = "CUDAExecutionProvider" in available
+        providers = ["CUDAExecutionProvider", "CPUExecutionProvider"] if prefer_cuda else ["CPUExecutionProvider"]
+        ctx_id = 0 if prefer_cuda else -1
+        
+        try:
+            # FaceAnalysis automatically downloads and uses the model from model zoo
+            app = FaceAnalysis(name=self.model, allowed_modules=["detection"], providers=providers)
+            app.prepare(ctx_id=ctx_id, det_size=self.det_size)
+            logger.info(f"InsightFace ({self.model}) initialized with providers={providers}, ctx_id={ctx_id}, det_size={self.det_size}")
+            return app
+        except Exception as e:
+            if prefer_cuda:
+                logger.warning(f"GPU initialization failed ({e}); retrying on CPU only.")
+                providers = ["CPUExecutionProvider"]
+                ctx_id = -1
+                app = FaceAnalysis(allowed_modules=["detection"], providers=providers)
+                app.prepare(ctx_id=ctx_id, det_size=self.det_size)
+                logger.info(f"InsightFace initialized with providers={providers}, ctx_id={ctx_id}, det_size={self.det_size}")
+                return app
+            raise
     
     def detect_faces(self, image, number_of_times_to_upsample=None):
         """
         Detects faces in a single image.
         
         Args:
-            image: A loaded image (numpy array from face_recognition.load_image_file).
-            number_of_times_to_upsample (int, optional): Override the default upsampling value.
+            image: A loaded image (numpy array from face_recognition.load_image_file or cv2.imread).
+            number_of_times_to_upsample (int, optional): Override the default upsampling value (for cnn/hog only).
         
         Returns:
             list: A list of face locations as (top, right, bottom, left) tuples.
         """
+        if self.model in self.INSIGHTFACE_MODELS:
+            return self._detect_faces_insightface(image)
+        
         upsample = number_of_times_to_upsample if number_of_times_to_upsample is not None else self.upsample
         try:
             face_locations = face_recognition.face_locations(
@@ -107,18 +179,59 @@ class FaceDetector:
         
         return face_locations
     
+    def _detect_faces_insightface(self, image):
+        """
+        Detects faces using InsightFace model.
+        
+        Args:
+            image: A loaded image (numpy array, RGB or BGR format).
+        
+        Returns:
+            list: A list of face locations as (top, right, bottom, left) tuples.
+        """
+        if self.insightface_app is None:
+            logger.error("InsightFace app not initialized")
+            return []
+        
+        try:
+            # InsightFace expects BGR format (OpenCV format)
+            # face_recognition.load_image_file returns RGB, so we may need to convert
+            if len(image.shape) == 3 and image.shape[2] == 3:
+                # Assume RGB from face_recognition, convert to BGR
+                image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            else:
+                image_bgr = image
+            
+            faces = self.insightface_app.get(image_bgr)
+            
+            # Convert InsightFace bbox format (x1, y1, x2, y2) to face_recognition format (top, right, bottom, left)
+            face_locations = []
+            for face in faces:
+                x1, y1, x2, y2 = [int(v) for v in face.bbox]
+                # Convert to (top, right, bottom, left)
+                face_locations.append((y1, x2, y2, x1))
+            
+            return face_locations
+        except Exception as e:
+            logger.error(f"InsightFace detection failed: {e}", exc_info=True)
+            return []
+    
     def detect_faces_batch(self, images, batch_size=32, number_of_times_to_upsample=None):
         """
         Detects faces in a batch of images for efficiency.
         
         Args:
             images (list): A list of loaded images (numpy arrays).
-            batch_size (int): Number of images to process at once.
-            number_of_times_to_upsample (int, optional): Override the default upsampling value.
+            batch_size (int): Number of images to process at once (for CNN/HOG only).
+            number_of_times_to_upsample (int, optional): Override the default upsampling value (for cnn/hog only).
         
         Returns:
             list: A list of lists, where each inner list contains face locations for that image.
         """
+        # InsightFace processes images individually but is fast enough
+        if self.model in self.INSIGHTFACE_MODELS:
+            return [self._detect_faces_insightface(img) for img in images]
+        
         upsample = number_of_times_to_upsample if number_of_times_to_upsample is not None else self.upsample
         
         if self.model == "cnn":
@@ -671,16 +784,19 @@ def get_classifier(classifier_type, celebrity_data, face_detection_model=None, d
         classifier_type (str): The type of classifier to create. 
                                Options: "face_recognition_cnn", "face_recognition_hog", "vit_b32".
         celebrity_data (list): A list of dictionaries, each with "name" and "reference_image_path".
-        face_detection_model (str, optional): The face detection model to use ('cnn' or 'hog').
-                                             If None, uses 'cnn' for face_recognition_cnn and vit_b32,
-                                             and 'hog' for face_recognition_hog.
+        face_detection_model (str, optional): The face detection model to use. Options:
+                                             InsightFace models: 'buffalo_l' (default), 'buffalo_m', 'buffalo_s', 'antelopev2'
+                                             Legacy: 'cnn', 'hog'
+                                             If None, uses 'buffalo_l' for all classifiers.
+        detection_upsample (int, optional): Upsample parameter for CNN/HOG models only.
+        enable_multi_pass (bool, optional): Enable multi-pass detection for CNN/HOG models only.
 
     Returns:
         Classifier: An instance of a Classifier subclass, or None if unavailable.
     """
     logger.info(f"Getting classifier of type: {classifier_type}")
     if classifier_type == "face_recognition_cnn":
-        detection_model = face_detection_model if face_detection_model else "cnn"
+        detection_model = face_detection_model if face_detection_model else "buffalo_l"
         # Resolve upsample/multi-pass with env overrides if not explicitly provided
         if detection_upsample is None:
             try:
@@ -697,7 +813,7 @@ def get_classifier(classifier_type, celebrity_data, face_detection_model=None, d
             enable_multi_pass=enable_multi_pass,
         )
     elif classifier_type == "face_recognition_hog":
-        detection_model = face_detection_model if face_detection_model else "hog"
+        detection_model = face_detection_model if face_detection_model else "buffalo_l"
         if detection_upsample is None:
             try:
                 detection_upsample = int(os.getenv("FR_UPSAMPLE", "1"))
@@ -716,14 +832,14 @@ def get_classifier(classifier_type, celebrity_data, face_detection_model=None, d
         if not VIT_LIBRARIES_AVAILABLE:
             logger.warning("ViT libraries not found. ViT classifier is unavailable.")
             return None
-        detection_model = face_detection_model if face_detection_model else "cnn"
-        # Use lower upsampling for ViT to reduce memory usage
+        detection_model = face_detection_model if face_detection_model else "buffalo_l"
+        # Use default settings for ViT
         return ViTClassifier(
             name="vit_b32",
             celebrity_data=celebrity_data,
             threshold=0.6,
             face_detection_model=detection_model,
-            detection_upsample=1,  # Lower for memory efficiency
+            detection_upsample=1,  # Lower for memory efficiency (only for cnn/hog)
             enable_multi_pass=False  # Disable multi-pass to save memory
         )
     else:
