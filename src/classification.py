@@ -1,14 +1,19 @@
 """
-This module provides a modular classification system for detecting celebrities in images.
-It is designed to be extensible, allowing for the addition of new models and methods for comparison.
+Modular Classification System for Detecting Celebrities in Images
 
-The module includes:
-- An abstract base class `Classifier` that defines the interface for all classifiers.
-- `FaceRecognitionClassifier`: A classifier that uses the `face_recognition` library. 
-  It can be configured to use either 'cnn' or 'hog' models.
-- `ViTClassifier`: A classifier that uses a pre-trained Vision Transformer (ViT) model 
-  for face embedding and comparison.
-- `get_classifier`: A factory function to easily create instances of different classifiers.
+This module provides a highly composable architecture where:
+- Detection models (buffalo_l, buffalo_m, cnn, hog, etc.) are pluggable
+- Embedding models (insightface, face_recognition, vit, etc.) are pluggable  
+- Matching methods (cosine_similarity, euclidean_distance, etc.) are pluggable
+
+This enables testing ANY combination of detection + embedding + matching method.
+
+Key Components:
+- FaceDetector: Pluggable face detection (multiple model support)
+- EmbeddingExtractor: Pluggable embedding generation (multiple model support)
+- MatchingMethod: Pluggable similarity/distance computation
+- UnifiedClassifier: Orchestrates the pipeline with configurable components
+- get_classifier: Factory for creating configured classifiers
 """
 
 import json
@@ -20,6 +25,7 @@ from src.logging_utils import setup_logger
 import numpy as np
 from tqdm import tqdm
 import cv2
+from typing import List, Dict, Tuple, Optional, Any
 
 # InsightFace imports (optional, with fallback)
 try:
@@ -28,6 +34,14 @@ try:
     INSIGHTFACE_AVAILABLE = True
 except ImportError:
     INSIGHTFACE_AVAILABLE = False
+
+# Vision Transformer imports (optional)
+try:
+    import torch
+    from transformers import CLIPProcessor, CLIPModel
+    VIT_LIBRARIES_AVAILABLE = True
+except ImportError:
+    VIT_LIBRARIES_AVAILABLE = False
 
 logger = setup_logger()
 
@@ -318,6 +332,208 @@ class FaceDetector:
             # HOG doesn't have native batch support, process sequentially
             return [self.detect_faces(img, number_of_times_to_upsample=upsample) for img in images]
 
+
+# ===== MODULAR ARCHITECTURE: PLUGGABLE COMPONENTS =====
+
+# --- Matching Methods (Pluggable) ---
+
+class MatchingMethod(ABC):
+    """Abstract base class for similarity/distance matching methods."""
+    
+    @abstractmethod
+    def compare(self, embedding1: np.ndarray, embedding2: np.ndarray) -> float:
+        """
+        Compare two embeddings and return a similarity/distance score.
+        
+        Returns:
+            float: A score where higher = more similar (for similarity metrics)
+                   or lower = more similar (for distance metrics).
+                   Should be normalized to roughly 0-1 range for consistency.
+        """
+        pass
+
+
+class CosineSimilarityMatching(MatchingMethod):
+    """Cosine similarity matching (for normalized embeddings)."""
+    
+    def compare(self, embedding1: np.ndarray, embedding2: np.ndarray) -> float:
+        """Returns cosine similarity in range [-1, 1], scaled to [0, 1]."""
+        norm1 = embedding1 / (np.linalg.norm(embedding1) + 1e-8)
+        norm2 = embedding2 / (np.linalg.norm(embedding2) + 1e-8)
+        # Scale from [-1, 1] to [0, 1] so higher is better
+        return 0.5 + 0.5 * np.dot(norm1, norm2)
+
+
+class EuclideanDistanceMatching(MatchingMethod):
+    """Euclidean distance matching (lower is better, inverted to match interface)."""
+    
+    def compare(self, embedding1: np.ndarray, embedding2: np.ndarray) -> float:
+        """Returns inverted normalized euclidean distance so higher = more similar."""
+        distance = np.linalg.norm(embedding1 - embedding2)
+        # Normalize to roughly 0-1 range (most faces have distance < 1.5)
+        return np.exp(-distance)  # Gaussian falloff, closer faces score higher
+
+
+class L2DistanceMatching(MatchingMethod):
+    """L2 (Euclidean) distance with thresholding."""
+    
+    def compare(self, embedding1: np.ndarray, embedding2: np.ndarray) -> float:
+        """Returns 1 - normalized L2 distance."""
+        distance = np.sqrt(np.sum((embedding1 - embedding2) ** 2))
+        # Most faces have L2 distance < 2.0, normalize accordingly
+        return max(0, 1.0 - (distance / 2.0))
+
+
+# --- Embedding Extractors (Pluggable) ---
+
+class EmbeddingExtractor(ABC):
+    """Abstract base class for face embedding extraction."""
+    
+    @abstractmethod
+    def extract_embedding(self, image: np.ndarray, bbox: Tuple[int, int, int, int]) -> Optional[np.ndarray]:
+        """
+        Extract embedding from a face crop.
+        
+        Args:
+            image: Image in BGR format (OpenCV)
+            bbox: Bounding box as (top, right, bottom, left)
+        
+        Returns:
+            Embedding vector or None if extraction failed
+        """
+        pass
+    
+    @abstractmethod
+    def extract_embeddings_batch(self, image: np.ndarray, bboxes: List[Tuple[int, int, int, int]]) -> List[Optional[np.ndarray]]:
+        """Extract embeddings for multiple faces in one image."""
+        pass
+
+
+class InsightFaceEmbedder(EmbeddingExtractor):
+    """InsightFace embedding extractor (512-dim embeddings)."""
+    
+    def __init__(self, model_name: str = "buffalo_l"):
+        if not INSIGHTFACE_AVAILABLE:
+            raise ImportError("InsightFace not available")
+        
+        logger.info(f"Initializing InsightFaceEmbedder({model_name})")
+        self.model_name = model_name
+        
+        available = ort.get_available_providers()
+        prefer_cuda = "CUDAExecutionProvider" in available
+
+        # Try requested model first (GPU if available), then CPU, finally fall back to buffalo_l CPU if download fails.
+        attempts = []
+        if prefer_cuda:
+            attempts.append((model_name, ["CUDAExecutionProvider", "CPUExecutionProvider"], 0))
+        attempts.append((model_name, ["CPUExecutionProvider"], -1))
+        if model_name != "buffalo_l":
+            attempts.append(("buffalo_l", ["CPUExecutionProvider"], -1))
+        
+        last_error = None
+        for attempt_model, providers, ctx_id in attempts:
+            try:
+                self.app = FaceAnalysis(name=attempt_model, allowed_modules=["recognition"], providers=providers)
+                self.app.prepare(ctx_id=ctx_id, det_size=(640, 640))
+                self.model_name = attempt_model
+                logger.info(
+                    f"InsightFaceEmbedder initialized (model={attempt_model}, providers={providers}, ctx_id={ctx_id})"
+                )
+                break
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    f"InsightFaceEmbedder init failed for model={attempt_model}, providers={providers}, ctx_id={ctx_id}: {e}"
+                )
+                continue
+        else:
+            # Only reached if every attempt failed.
+            raise last_error or RuntimeError("InsightFaceEmbedder initialization failed")
+    
+    def extract_embedding(self, image: np.ndarray, bbox: Tuple[int, int, int, int]) -> Optional[np.ndarray]:
+        try:
+            top, right, bottom, left = bbox
+            face_crop = image[top:bottom, left:right]
+            if face_crop.size == 0:
+                return None
+            embedding = self.app.rec_model.get_feat(face_crop)
+            return embedding
+        except Exception as e:
+            logger.debug(f"Error extracting InsightFace embedding: {e}")
+            return None
+    
+    def extract_embeddings_batch(self, image: np.ndarray, bboxes: List[Tuple[int, int, int, int]]) -> List[Optional[np.ndarray]]:
+        return [self.extract_embedding(image, bbox) for bbox in bboxes]
+
+
+class FaceRecognitionEmbedder(EmbeddingExtractor):
+    """face_recognition library embedder (128-dim dlib embeddings)."""
+    
+    def extract_embedding(self, image: np.ndarray, bbox: Tuple[int, int, int, int]) -> Optional[np.ndarray]:
+        try:
+            # face_recognition expects RGB, convert from BGR
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            # Extract encoding for this specific bbox
+            top, right, bottom, left = bbox
+            encodings = face_recognition.face_encodings(image_rgb, [(top, right, bottom, left)])
+            if encodings:
+                return encodings[0]
+            return None
+        except Exception as e:
+            logger.debug(f"Error extracting face_recognition embedding: {e}")
+            return None
+    
+    def extract_embeddings_batch(self, image: np.ndarray, bboxes: List[Tuple[int, int, int, int]]) -> List[Optional[np.ndarray]]:
+        try:
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            encodings = face_recognition.face_encodings(image_rgb, bboxes)
+            # Pad with None if face_recognition returns fewer encodings than bboxes
+            while len(encodings) < len(bboxes):
+                encodings.append(None)
+            return encodings[:len(bboxes)]
+        except Exception as e:
+            logger.debug(f"Error extracting face_recognition embeddings batch: {e}")
+            return [None] * len(bboxes)
+
+
+class ViTEmbedder(EmbeddingExtractor):
+    """Vision Transformer embedder (768-dim CLIP embeddings)."""
+    
+    def __init__(self):
+        if not VIT_LIBRARIES_AVAILABLE:
+            raise ImportError("Vision Transformer libraries not available")
+        
+        logger.info("Initializing ViT embedder (CLIP ViT-B/32)")
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(self.device)
+        self.processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        self.model.eval()
+    
+    def extract_embedding(self, image: np.ndarray, bbox: Tuple[int, int, int, int]) -> Optional[np.ndarray]:
+        try:
+            top, right, bottom, left = bbox
+            face_crop = image[top:bottom, left:right]
+            if face_crop.size == 0:
+                return None
+            
+            # Convert BGR to RGB for PIL
+            face_crop_rgb = cv2.cvtColor(face_crop, cv2.COLOR_BGR2RGB)
+            from PIL import Image
+            face_pil = Image.fromarray(face_crop_rgb)
+            
+            with torch.no_grad():
+                inputs = self.processor(images=face_pil, return_tensors="pt").to(self.device)
+                embedding = self.model.get_image_features(**inputs)
+            
+            return embedding.cpu().numpy().flatten()
+        except Exception as e:
+            logger.debug(f"Error extracting ViT embedding: {e}")
+            return None
+    
+    def extract_embeddings_batch(self, image: np.ndarray, bboxes: List[Tuple[int, int, int, int]]) -> List[Optional[np.ndarray]]:
+        return [self.extract_embedding(image, bbox) for bbox in bboxes]
+
+
 # --- Abstract Base Class for Classifiers ---
 
 class Classifier(ABC):
@@ -361,168 +577,230 @@ class Classifier(ABC):
         """
         pass
 
-# --- Face Recognition Classifier ---
+# --- Unified Classifier (Pluggable Detection + Embedding + Matching) ---
 
-class FaceRecognitionClassifier(Classifier):
+class UnifiedClassifier(Classifier):
     """
-    A classifier that uses the 'face_recognition' library. This is based on the logic
-    from the original classification.py and lapressHughJackmanDetector.py.
+    A unified, highly modular classifier that accepts pluggable components for:
+    - Face detection (detection_model: buffalo_l, buffalo_m, buffalo_s, cnn, hog, etc.)
+    - Face embedding (embedding_model: insightface, face_recognition, vit, etc.)
+    - Matching method (matching_method: cosine_similarity, euclidean_distance, l2_distance)
+    
+    This allows ANY combination of detection + embedding + matching to be tested.
+    
+    Example combinations:
+    - buffalo_l detection + insightface embedding + cosine_similarity
+    - buffalo_s detection + face_recognition embedding + euclidean_distance  
+    - cnn detection + vit embedding + l2_distance
     """
-    def __init__(self, name, celebrity_data, tolerance=0.6, face_detection_model="cnn", detection_upsample=2, enable_multi_pass=True):
+    
+    def __init__(
+        self,
+        name: str,
+        celebrity_data: List[Dict[str, str]],
+        detection_model: str = "buffalo_l",
+        embedding_model: str = "insightface",
+        matching_method: str = "cosine_similarity",
+        threshold: float = 0.6,
+        detection_upsample: int = 1,
+        enable_multi_pass: bool = False,
+    ):
         """
-        Initializes the FaceRecognitionClassifier.
-
+        Initialize the UnifiedClassifier with pluggable components.
+        
         Args:
-            name (str): The name for this classifier instance.
-            celebrity_data (list): A list of dictionaries, each with "name" and "reference_image_path".
-            tolerance (float): How much distance between faces to consider it a match. Lower is stricter.
-            face_detection_model (str): The face detection model to use ('cnn' or 'hog').
-            detection_upsample (int): Upsampling factor for face detection (1-3, default: 2).
-            enable_multi_pass (bool): Enable multi-pass detection for missed faces (default: True).
+            name: Classifier name
+            celebrity_data: List of {name, reference_image_path} dicts
+            detection_model: "buffalo_l" (default), "buffalo_m", "buffalo_s", "cnn", "hog"
+            embedding_model: "insightface" (default), "face_recognition", "vit"
+            matching_method: "cosine_similarity" (default), "euclidean_distance", "l2_distance"
+            threshold: Similarity threshold for match (0-1)
+            detection_upsample: Upsampling for cnn/hog only (1-3)
+            enable_multi_pass: Multi-pass detection for cnn/hog only
         """
         super().__init__(name)
-        logger.info(f"Initializing FaceRecognitionClassifier with detection model: {face_detection_model}, tolerance: {tolerance}, upsample: {detection_upsample}")
-        self.tolerance = tolerance
-        self.face_detector = FaceDetector(model=face_detection_model, upsample=detection_upsample, enable_multi_pass=enable_multi_pass)
-        self.known_face_encodings = []
-        self.known_face_names = []
-
-        for celebrity in celebrity_data:
-            logger.debug(f"Loading reference encoding for {celebrity['name']} from {celebrity['reference_image_path']}")
-            encodings = self._load_reference_encoding(celebrity["reference_image_path"])
-            if encodings:
-                self.known_face_encodings.extend(encodings)
-                self.known_face_names.extend([celebrity["name"]] * len(encodings))
-                logger.debug(f"Successfully loaded {len(encodings)} encodings for {celebrity['name']}")
-            else:
-                logger.warning(f"Could not load reference encoding for {celebrity['name']} from {celebrity['reference_image_path']}")
-
-        if not self.known_face_encodings:
-            logger.warning(f"Could not initialize {self.name}. No reference face encodings loaded.")
+        
+        logger.info(
+            f"Initializing UnifiedClassifier: {name}\n"
+            f"  Detection: {detection_model}\n"
+            f"  Embedding: {embedding_model}\n"
+            f"  Matching: {matching_method}\n"
+            f"  Threshold: {threshold}"
+        )
+        
+        self.detection_model = detection_model
+        self.embedding_model = embedding_model
+        self.matching_method_name = matching_method
+        self.threshold = threshold
+        
+        # Initialize detector
+        self.face_detector = FaceDetector(
+            model=detection_model,
+            upsample=detection_upsample,
+            enable_multi_pass=enable_multi_pass
+        )
+        
+        # Initialize embedding extractor
+        self.embedder = self._create_embedder(embedding_model)
+        
+        # Initialize matching method
+        self.matcher = self._create_matcher(matching_method)
+        
+        # Load reference embeddings
+        self.reference_embeddings: List[np.ndarray] = []
+        self.reference_names: List[str] = []
+        self._load_reference_embeddings(celebrity_data)
+        
+        if not self.reference_embeddings:
+            logger.warning(f"No reference embeddings loaded for {name}")
         else:
-            logger.info(f"Successfully initialized {self.name} with {len(self.known_face_encodings)} total reference encodings.")
-
-    def _load_reference_encoding(self, reference_image_path):
-        try:
-            logger.debug(f"Loading reference image from {reference_image_path}")
-            reference_image = face_recognition.load_image_file(reference_image_path)
-            reference_face_encodings = face_recognition.face_encodings(reference_image)
-            if reference_face_encodings:
-                logger.debug(f"Found {len(reference_face_encodings)} face(s) in {reference_image_path}")
-                return reference_face_encodings
-            else:
-                logger.warning(f"Could not find a face in the reference image: {reference_image_path}")
-                return []
-        except FileNotFoundError as e:
-            logger.error(f"Reference image not found at {reference_image_path}: {e}", exc_info=True)
-            return []
-
-    def classify_images(self, image_paths, image_batch_size=None, detection_batch_size=None):
-        logger.info(f"Batch detecting celebrities in {len(image_paths)} images using {self.name}")
-        if not self.known_face_encodings:
-            logger.warning("No known face encodings to compare against.")
-
-        output = {}
-
-        # Allow environment overrides for batch sizes
-        if image_batch_size is None:
-            try:
-                image_batch_size = int(os.getenv("FR_IMAGE_BATCH", "4"))
-            except ValueError:
-                image_batch_size = 4
-        if detection_batch_size is None:
-            try:
-                detection_batch_size = int(os.getenv("FR_DETECT_BATCH", "4"))
-            except ValueError:
-                detection_batch_size = 4
-
-        # Phase 1: detect faces and store locations only
-        locations_map = {}
-        prog_detect = tqdm(total=len(image_paths), desc=f"Detecting faces ({self.name})", unit="img")
-        for start in range(0, len(image_paths), image_batch_size):
-            batch_paths = image_paths[start:start + image_batch_size]
-
-            images = []
-            valid_paths = []
-            for path in batch_paths:
-                try:
-                    images.append(face_recognition.load_image_file(path))
-                    valid_paths.append(path)
-                except FileNotFoundError:
-                    logger.error(f"Image not found: {path}", exc_info=True)
-                    locations_map[path] = []
-
-            if not images:
-                continue
-
             logger.info(
-                f"Finding face locations for batch size {len(images)} using detection model: {self.face_detector.model} "
-                f"with upsample={self.face_detector.upsample}"
+                f"Successfully initialized {name} with "
+                f"{len(self.reference_embeddings)} reference embeddings"
             )
-            batch_face_locations = self.face_detector.detect_faces_batch(
-                images,
-                batch_size=min(detection_batch_size, len(images)),
-            )
-
-            for i, image_path in enumerate(valid_paths):
-                locations_map[image_path] = batch_face_locations[i]
-
-            del images
-            del batch_face_locations
-            prog_detect.update(len(valid_paths))
-        prog_detect.close()
-
-        # Optionally free detector reference
-        try:
-            del self.face_detector
-        except Exception:
-            pass
-
-        # Phase 2: identification using stored locations
-        prog_ident = tqdm(total=len(image_paths), desc=f"Identifying faces ({self.name})", unit="img")
-        for image_path in image_paths:
-            face_locations = locations_map.get(image_path, [])
-            if not face_locations:
-                output[image_path] = []
-                continue
-
+    
+    def _create_embedder(self, embedding_model: str) -> EmbeddingExtractor:
+        """Create the appropriate embedding extractor."""
+        if embedding_model == "insightface":
+            return InsightFaceEmbedder("buffalo_l")
+        elif embedding_model == "insightface_buffalo_l":
+            return InsightFaceEmbedder("buffalo_l")
+        elif embedding_model == "insightface_buffalo_m":
+            return InsightFaceEmbedder("buffalo_m")
+        elif embedding_model == "insightface_buffalo_s":
+            return InsightFaceEmbedder("buffalo_s")
+        elif embedding_model == "insightface_antelopev2":
+            return InsightFaceEmbedder("antelopev2")
+        elif embedding_model == "face_recognition":
+            return FaceRecognitionEmbedder()
+        elif embedding_model == "vit":
+            return ViTEmbedder()
+        else:
+            logger.warning(f"Unknown embedding model {embedding_model}, defaulting to face_recognition")
+            return FaceRecognitionEmbedder()
+    
+    def _create_matcher(self, matching_method: str) -> MatchingMethod:
+        """Create the appropriate matching method."""
+        if matching_method == "cosine_similarity":
+            return CosineSimilarityMatching()
+        elif matching_method == "euclidean_distance":
+            return EuclideanDistanceMatching()
+        elif matching_method == "l2_distance":
+            return L2DistanceMatching()
+        else:
+            logger.warning(f"Unknown matching method {matching_method}, defaulting to cosine_similarity")
+            return CosineSimilarityMatching()
+    
+    def _load_reference_embeddings(self, celebrity_data: List[Dict[str, str]]):
+        """Load embeddings from reference images."""
+        for celeb in celebrity_data:
             try:
-                image = face_recognition.load_image_file(image_path)
-            except FileNotFoundError:
-                logger.error(f"Image not found: {image_path}", exc_info=True)
+                img = cv2.imread(celeb["reference_image_path"])
+                if img is None:
+                    logger.warning(f"Could not load: {celeb['reference_image_path']}")
+                    continue
+                
+                # Detect face in reference image
+                bboxes = self.face_detector.detect_faces(img)
+                if not bboxes:
+                    logger.warning(f"No face detected in {celeb['reference_image_path']}")
+                    continue
+                
+                # Extract embedding
+                embedding = self.embedder.extract_embedding(img, bboxes[0])
+                if embedding is not None:
+                    self.reference_embeddings.append(embedding)
+                    self.reference_names.append(celeb["name"])
+                    logger.debug(f"Loaded embedding for {celeb['name']}")
+                else:
+                    logger.warning(f"Could not extract embedding for {celeb['name']}")
+            except Exception as e:
+                logger.warning(f"Error loading {celeb['name']}: {e}")
+    
+    def classify_images(self, image_paths: List[str], image_batch_size: Optional[int] = None) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Classify images using detection + embedding + matching pipeline.
+        
+        Args:
+            image_paths: List of image file paths
+            image_batch_size: Batch size for processing
+        
+        Returns:
+            Dict mapping image paths to lists of detected celebrities
+        """
+        logger.info(f"Classifying {len(image_paths)} images with {self.name}")
+        
+        if not self.reference_embeddings:
+            logger.warning("No reference embeddings available")
+            return {path: [] for path in image_paths}
+        
+        if image_batch_size is None:
+            image_batch_size = int(os.getenv("UNIFIED_BATCH", "4"))
+        
+        output = {}
+        reference_embeddings_array = np.array(self.reference_embeddings)
+        
+        prog = tqdm(total=len(image_paths), desc=f"Classifying ({self.name})", unit="img")
+        
+        for image_path in image_paths:
+            try:
+                img = cv2.imread(image_path)
+                if img is None:
+                    logger.error(f"Could not load: {image_path}")
+                    output[image_path] = []
+                    prog.update(1)
+                    continue
+                
+                # Phase 1: Detect faces
+                face_bboxes = self.face_detector.detect_faces(img)
+                if not face_bboxes:
+                    output[image_path] = []
+                    prog.update(1)
+                    continue
+                
+                logger.debug(f"Found {len(face_bboxes)} face(s)")
+                
+                # Phase 2: Extract embeddings
+                embeddings = self.embedder.extract_embeddings_batch(img, face_bboxes)
+                
+                all_detections = []
+                for face_idx, (bbox, embedding) in enumerate(zip(face_bboxes, embeddings)):
+                    if embedding is None:
+                        logger.debug(f"Could not extract embedding for face {face_idx}")
+                        continue
+                    
+                    # Phase 3: Match against references
+                    scores = []
+                    for ref_embedding in reference_embeddings_array:
+                        score = self.matcher.compare(embedding, ref_embedding)
+                        scores.append(score)
+                    
+                    scores = np.array(scores)
+                    best_idx = np.argmax(scores)
+                    best_score = scores[best_idx]
+                    
+                    if best_score >= self.threshold:
+                        name = self.reference_names[best_idx]
+                    else:
+                        name = "Unknown"
+                    
+                    all_detections.append({
+                        "name": name,
+                        "location": bbox,
+                        "confidence": float(best_score),
+                    })
+                
+                output[image_path] = all_detections
+                prog.update(1)
+                
+            except Exception as e:
+                logger.error(f"Error processing {image_path}: {e}", exc_info=True)
                 output[image_path] = []
-                continue
-
-            logger.debug(f"Found {len(face_locations)} face(s) in {image_path}")
-            face_encodings = face_recognition.face_encodings(image, face_locations)
-
-            all_detections = []
-            for j, face_encoding in enumerate(face_encodings):
-                name = "Unknown"
-                if self.known_face_encodings:
-                    matches = face_recognition.compare_faces(
-                        self.known_face_encodings,
-                        face_encoding,
-                        tolerance=self.tolerance,
-                    )
-                    face_distances = face_recognition.face_distance(
-                        self.known_face_encodings, face_encoding
-                    )
-                    best_match_index = np.argmin(face_distances)
-                    if matches[best_match_index]:
-                        name = self.known_face_names[best_match_index]
-
-                all_detections.append({
-                    "name": name,
-                    "location": face_locations[j],
-                })
-
-            output[image_path] = all_detections
-            prog_ident.update(1)
-            del image
-
-        prog_ident.close()
+                prog.update(1)
+        
+        prog.close()
         return output
+
 
 # --- Vision Transformer (ViT) Classifier ---
 
@@ -773,106 +1051,185 @@ class ViTClassifier(Classifier):
 
         return output
 
-# --- Classifier Factory ---
-
-def get_classifier(classifier_type, celebrity_data, face_detection_model=None, detection_upsample=None, enable_multi_pass=None):
+def get_classifier(
+    classifier_type: str, 
+    celebrity_data: List[Dict[str, str]], 
+    detection_model: Optional[str] = None,
+    embedding_model: Optional[str] = None,
+    matching_method: Optional[str] = None,
+    threshold: Optional[float] = None,
+    detection_upsample: Optional[int] = None,
+    enable_multi_pass: Optional[bool] = None,
+):
     """
-    Factory function to get a classifier instance. This provides a single point
-    of entry for creating different types of classifiers.
-
+    Factory function to create a classifier with pluggable detection, embedding, and matching.
+    
+    USAGE PATTERNS:
+    ---------------
+    1. Simple presets (backward compatible):
+       get_classifier("face_recognition_cnn", celebrity_data)
+       get_classifier("insightface", celebrity_data)
+       get_classifier("vit_b32", celebrity_data)
+    
+    2. Custom combinations (NEW - fully modular):
+       get_classifier(
+           "unified",
+           celebrity_data,
+           detection_model="buffalo_l",
+           embedding_model="insightface",
+           matching_method="cosine_similarity"
+       )
+       
+       get_classifier(
+           "unified",
+           celebrity_data,
+           detection_model="hog",
+           embedding_model="face_recognition",
+           matching_method="euclidean_distance"
+       )
+    
     Args:
-        classifier_type (str): The type of classifier to create. 
-                               Options: "face_recognition_cnn", "face_recognition_hog", "vit_b32".
-        celebrity_data (list): A list of dictionaries, each with "name" and "reference_image_path".
-        face_detection_model (str, optional): The face detection model to use. Options:
-                                             InsightFace models: 'buffalo_l' (default), 'buffalo_m', 'buffalo_s', 'antelopev2'
-                                             Legacy: 'cnn', 'hog'
-                                             If None, uses 'buffalo_l' for all classifiers.
-        detection_upsample (int, optional): Upsample parameter for CNN/HOG models only.
-        enable_multi_pass (bool, optional): Enable multi-pass detection for CNN/HOG models only.
-
+        classifier_type: "unified", "face_recognition_cnn", "face_recognition_hog", 
+                        "vit_b32", or "insightface"
+        celebrity_data: List of {name, reference_image_path} dicts
+        detection_model: "buffalo_l", "buffalo_m", "buffalo_s", "cnn", "hog" (optional)
+        embedding_model: "insightface", "face_recognition", "vit" (optional)
+        matching_method: "cosine_similarity", "euclidean_distance", "l2_distance" (optional)
+        threshold: Similarity threshold 0-1 (optional, defaults vary by type)
+        detection_upsample: Upsampling for cnn/hog detection (optional)
+        enable_multi_pass: Multi-pass detection for cnn/hog (optional)
+    
     Returns:
-        Classifier: An instance of a Classifier subclass, or None if unavailable.
+        Classifier instance
     """
-    logger.info(f"Getting classifier of type: {classifier_type}")
-    if classifier_type == "face_recognition_cnn":
-        detection_model = face_detection_model if face_detection_model else "buffalo_l"
-        # Resolve upsample/multi-pass with env overrides if not explicitly provided
-        if detection_upsample is None:
-            try:
-                detection_upsample = int(os.getenv("FR_UPSAMPLE", "1"))
-            except ValueError:
-                detection_upsample = 1
-        if enable_multi_pass is None:
-            enable_multi_pass = False
-        return FaceRecognitionClassifier(
+    logger.info(f"Getting classifier: {classifier_type}")
+    
+    # NEW: Unified classifier with full modularity
+    if classifier_type == "unified":
+        return UnifiedClassifier(
+            name=f"unified_{detection_model or 'default'}_{embedding_model or 'default'}",
+            celebrity_data=celebrity_data,
+            detection_model=detection_model or "buffalo_l",
+            embedding_model=embedding_model or "insightface",
+            matching_method=matching_method or "cosine_similarity",
+            threshold=threshold or 0.6,
+            detection_upsample=detection_upsample or 1,
+            enable_multi_pass=enable_multi_pass or False,
+        )
+    
+    # BACKWARD COMPATIBLE: Legacy classifier types
+    elif classifier_type == "face_recognition_cnn":
+        return UnifiedClassifier(
             name="face_recognition_cnn",
             celebrity_data=celebrity_data,
-            face_detection_model=detection_model,
-            detection_upsample=detection_upsample,
-            enable_multi_pass=enable_multi_pass,
+            detection_model=detection_model or "cnn",
+            embedding_model="face_recognition",
+            matching_method="euclidean_distance",
+            threshold=threshold or 0.6,
+            detection_upsample=detection_upsample or 2,
+            enable_multi_pass=enable_multi_pass or True,
         )
+    
     elif classifier_type == "face_recognition_hog":
-        detection_model = face_detection_model if face_detection_model else "buffalo_l"
-        if detection_upsample is None:
-            try:
-                detection_upsample = int(os.getenv("FR_UPSAMPLE", "1"))
-            except ValueError:
-                detection_upsample = 1
-        if enable_multi_pass is None:
-            enable_multi_pass = False
-        return FaceRecognitionClassifier(
+        return UnifiedClassifier(
             name="face_recognition_hog",
             celebrity_data=celebrity_data,
-            face_detection_model=detection_model,
-            detection_upsample=detection_upsample,
-            enable_multi_pass=enable_multi_pass,
+            detection_model=detection_model or "hog",
+            embedding_model="face_recognition",
+            matching_method="euclidean_distance",
+            threshold=threshold or 0.6,
+            detection_upsample=detection_upsample or 1,
+            enable_multi_pass=enable_multi_pass or False,
         )
+    
     elif classifier_type == "vit_b32":
         if not VIT_LIBRARIES_AVAILABLE:
-            logger.warning("ViT libraries not found. ViT classifier is unavailable.")
-            return None
-        detection_model = face_detection_model if face_detection_model else "buffalo_l"
-        # Use default settings for ViT
-        return ViTClassifier(
+            logger.warning("ViT libraries not available, falling back to face_recognition_cnn")
+            return get_classifier("face_recognition_cnn", celebrity_data)
+        return UnifiedClassifier(
             name="vit_b32",
             celebrity_data=celebrity_data,
-            threshold=0.6,
-            face_detection_model=detection_model,
-            detection_upsample=1,  # Lower for memory efficiency (only for cnn/hog)
-            enable_multi_pass=False  # Disable multi-pass to save memory
+            detection_model=detection_model or "buffalo_l",
+            embedding_model="vit",
+            matching_method="cosine_similarity",
+            threshold=threshold or 0.8,
+            detection_upsample=detection_upsample or 1,
+            enable_multi_pass=enable_multi_pass or False,
         )
+    
+    elif classifier_type.startswith("insightface"):
+        if not INSIGHTFACE_AVAILABLE:
+            logger.warning("InsightFace not available, falling back to face_recognition_cnn")
+            return get_classifier("face_recognition_cnn", celebrity_data)
+        
+        # Parse insightface variants: "insightface", "insightface_buffalo_m", etc.
+        model_variant = "buffalo_l"  # default
+        if "_" in classifier_type:
+            model_variant = classifier_type.split("_", 1)[1]
+        
+        return UnifiedClassifier(
+            name=f"insightface_{model_variant}",
+            celebrity_data=celebrity_data,
+            detection_model=detection_model or model_variant,
+            embedding_model=f"insightface_{model_variant}",
+            matching_method="cosine_similarity",
+            threshold=threshold or 0.6,
+            detection_upsample=detection_upsample or 1,
+            enable_multi_pass=enable_multi_pass or False,
+        )
+    
     else:
         logger.error(f"Unknown classifier type: {classifier_type}")
         raise ValueError(f"Unknown classifier type: {classifier_type}")
 
 # --- Example Usage ---
 if __name__ == '__main__':
-    # Configuration for the example
     CELEBRITIES_JSON = "celebrities.json"
     TEST_IMAGES = [
-        "Images/3899/062770.jpg",       # An image expected to contain Hugh Jackman
-        "Images/not_3899/017031.jpg"  # An image not expected to contain Hugh Jackman
+        "Images/3899/062770.jpg",
+        "Images/not_3899/017031.jpg"
     ]
 
     celebrity_data = load_celebrities_from_json(CELEBRITIES_JSON)
     if not celebrity_data:
-        logger.error("No celebrity data loaded. Exiting example.")
+        logger.error("No celebrity data loaded.")
     else:
-        logger.info("--- Testing Face Recognition (CNN) ---")
-        cnn_classifier = get_classifier("face_recognition_cnn", celebrity_data)
-        if cnn_classifier:
-            results_cnn = cnn_classifier.classify_images(TEST_IMAGES)
-            logger.info(f"CNN Results: {results_cnn}")
-
-        logger.info("\n--- Testing ViT-B/32 ---")
-        vit_classifier = get_classifier("vit_b32", celebrity_data)
-        if vit_classifier:
-            results_vit = vit_classifier.classify_images(TEST_IMAGES)
-            logger.info(f"ViT Results: {results_vit}")
-
-        logger.info("\n--- Testing Face Recognition (HOG) ---")
-        hog_classifier = get_classifier("face_recognition_hog", celebrity_data)
-        if hog_classifier:
-            results_hog = hog_classifier.classify_images(TEST_IMAGES)
-            logger.info(f"HOG Results: {results_hog}")
+        # Example 1: Legacy classifier types (backward compatible)
+        logger.info("=== BACKWARD COMPATIBLE USAGE ===")
+        cnn_clf = get_classifier("face_recognition_cnn", celebrity_data)
+        insightface_clf = get_classifier("insightface", celebrity_data)
+        
+        # Example 2: Custom modular combinations (NEW)
+        logger.info("\n=== NEW MODULAR COMBINATIONS ===")
+        
+        # Fast detection + accurate embeddings
+        fast_accurate = get_classifier(
+            "unified",
+            celebrity_data,
+            detection_model="buffalo_s",  # lightweight detection
+            embedding_model="insightface_buffalo_l",  # accurate embeddings
+            matching_method="cosine_similarity"
+        )
+        logger.info(f"Created: {fast_accurate.name}")
+        
+        # Legacy detection + modern embeddings
+        legacy_modern = get_classifier(
+            "unified",
+            celebrity_data,
+            detection_model="hog",  # CPU-friendly legacy
+            embedding_model="insightface",  # modern 512-dim
+            matching_method="cosine_similarity"
+        )
+        logger.info(f"Created: {legacy_modern.name}")
+        
+        # Vision Transformer with HOG detection
+        vit_hog = get_classifier(
+            "unified",
+            celebrity_data,
+            detection_model="hog",
+            embedding_model="vit",
+            matching_method="l2_distance"
+        )
+        logger.info(f"Created: {vit_hog.name}")
+        
+        logger.info("\n✓ Modular classification architecture ready!")

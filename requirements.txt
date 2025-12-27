@@ -1,4 +1,5 @@
 face_recognition
+streamlit
 # dlib is built manually in Dockerfile
 torch
 timm
@@ -11,4 +12,4 @@ seaborn
 tqdm
 opencv-python-headless
 onnxruntime-gpu
-# insightface is installed from source in Dockerfile
+transformers

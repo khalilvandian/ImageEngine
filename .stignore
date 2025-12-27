@@ -1,0 +1,13 @@
+# Streamlit ignore file - prevents watching these directories
+image_outputs/
+test_outputs/
+logs/
+Archive/
+__pycache__/
+*.pyc
+.git/
+models/
+*.onnx
+*.pth
+notebooks/
+Images/
