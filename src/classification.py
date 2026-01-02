@@ -208,26 +208,74 @@ class FaceDetector:
             return []
         
         try:
-            # InsightFace expects BGR format (OpenCV format)
-            # face_recognition.load_image_file returns RGB, so we may need to convert
-            if len(image.shape) == 3 and image.shape[2] == 3:
-                # Assume RGB from face_recognition, convert to BGR
-                image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-            else:
-                image_bgr = image
+            # InsightFace expects BGR format (OpenCV format).
+            # Default: assume input is BGR from cv2.imread.
+            # If input is RGB (from face_recognition.load_image_file), caller should convert upstream.
+            image_bgr = image
             
             faces = self.insightface_app.get(image_bgr)
-            
+
             # Convert InsightFace bbox format (x1, y1, x2, y2) to face_recognition format (top, right, bottom, left)
             face_locations = []
             for face in faces:
                 x1, y1, x2, y2 = [int(v) for v in face.bbox]
                 # Convert to (top, right, bottom, left)
                 face_locations.append((y1, x2, y2, x1))
-            
+
             return face_locations
         except Exception as e:
             logger.error(f"InsightFace detection failed: {e}", exc_info=True)
+            return []
+
+    def detect_faces_with_landmarks(self, image):
+        """
+        Detect faces and return landmarks and detection scores when available.
+
+        Returns a list of dicts with keys:
+        - 'bbox': (top, right, bottom, left)
+        - 'kps': numpy array of shape (5, 2) or None
+        - 'det_score': float or None
+        """
+        try:
+            if self.model in self.INSIGHTFACE_MODELS:
+                if self.insightface_app is None:
+                    logger.error("InsightFace app not initialized")
+                    return []
+
+                # Ensure BGR for InsightFace
+                if len(image.shape) == 3 and image.shape[2] == 3:
+                    image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                else:
+                    image_bgr = image
+
+                faces = self.insightface_app.get(image_bgr)
+                results = []
+                for face in faces:
+                    x1, y1, x2, y2 = [int(v) for v in face.bbox]
+                    bbox_trbl = (y1, x2, y2, x1)
+                    kps = None
+                    try:
+                        if face.kps is not None:
+                            kps = np.array(face.kps, dtype=np.float32)
+                    except Exception:
+                        kps = None
+                    det_score = None
+                    try:
+                        det_score = float(face.det_score)
+                    except Exception:
+                        det_score = None
+                    results.append({
+                        "bbox": bbox_trbl,
+                        "kps": kps,
+                        "det_score": det_score,
+                    })
+                return results
+            else:
+                # Legacy detectors do not provide landmarks/scores
+                bboxes = self.detect_faces(image)
+                return [{"bbox": b, "kps": None, "det_score": None} for b in bboxes]
+        except Exception as e:
+            logger.error(f"Detection with landmarks failed: {e}", exc_info=True)
             return []
     
     def detect_faces_batch(self, images, batch_size=32, number_of_times_to_upsample=None):
@@ -465,6 +513,52 @@ class InsightFaceEmbedder(EmbeddingExtractor):
     def extract_embeddings_batch(self, image: np.ndarray, bboxes: List[Tuple[int, int, int, int]]) -> List[Optional[np.ndarray]]:
         return [self.extract_embedding(image, bbox) for bbox in bboxes]
 
+    def extract_embedding_aligned(self, image: np.ndarray, face_info: Dict[str, Any], image_size: int = 112) -> Optional[np.ndarray]:
+        """
+        Extract embedding using 5-point landmark alignment if available.
+
+        face_info should contain keys: 'bbox', 'kps', 'det_score'.
+        """
+        try:
+            kps = face_info.get("kps")
+            bbox = face_info.get("bbox")
+            if kps is None:
+                # Fallback to bbox-only crop
+                if bbox is None:
+                    return None
+                top, right, bottom, left = bbox
+                face_crop = image[top:bottom, left:right]
+                if face_crop.size == 0:
+                    return None
+                return self.app.rec_model.get_feat(face_crop)
+
+            # Ensure BGR image for InsightFace
+            if len(image.shape) == 3 and image.shape[2] == 3:
+                image_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            else:
+                image_bgr = image
+
+            # Landmark-based alignment
+            try:
+                from insightface.utils.face_align import norm_crop
+            except Exception as ie:
+                logger.debug(f"Alignment import failed, using bbox crop: {ie}")
+                if bbox is None:
+                    return None
+                top, right, bottom, left = bbox
+                face_crop = image[top:bottom, left:right]
+                if face_crop.size == 0:
+                    return None
+                return self.app.rec_model.get_feat(face_crop)
+
+            aligned = norm_crop(image_bgr, kps.astype(np.float32), image_size=image_size, mode='arcface')
+            if aligned is None or aligned.size == 0:
+                return None
+            return self.app.rec_model.get_feat(aligned)
+        except Exception as e:
+            logger.debug(f"Error extracting aligned InsightFace embedding: {e}")
+            return None
+
 
 class FaceRecognitionEmbedder(EmbeddingExtractor):
     """face_recognition library embedder (128-dim dlib embeddings)."""
@@ -604,6 +698,7 @@ class UnifiedClassifier(Classifier):
         threshold: float = 0.6,
         detection_upsample: int = 1,
         enable_multi_pass: bool = False,
+        use_alignment: bool = False,
     ):
         """
         Initialize the UnifiedClassifier with pluggable components.
@@ -632,6 +727,7 @@ class UnifiedClassifier(Classifier):
         self.embedding_model = embedding_model
         self.matching_method_name = matching_method
         self.threshold = threshold
+        self.use_alignment = use_alignment
         
         # Initialize detector
         self.face_detector = FaceDetector(
@@ -760,8 +856,17 @@ class UnifiedClassifier(Classifier):
                 
                 logger.debug(f"Found {len(face_bboxes)} face(s)")
                 
-                # Phase 2: Extract embeddings
-                embeddings = self.embedder.extract_embeddings_batch(img, face_bboxes)
+                # Phase 2: Extract embeddings (optionally with alignment if available)
+                if self.use_alignment and isinstance(self.embedder, InsightFaceEmbedder) and self.face_detector.model in self.face_detector.INSIGHTFACE_MODELS:
+                    face_infos = self.face_detector.detect_faces_with_landmarks(img)
+                    embeddings = []
+                    for fi in face_infos:
+                        emb = self.embedder.extract_embedding_aligned(img, fi)
+                        embeddings.append(emb)
+                    # use aligned bbox list to keep locations in sync
+                    face_bboxes = [fi.get("bbox") for fi in face_infos]
+                else:
+                    embeddings = self.embedder.extract_embeddings_batch(img, face_bboxes)
                 
                 all_detections = []
                 for face_idx, (bbox, embedding) in enumerate(zip(face_bboxes, embeddings)):
@@ -1155,6 +1260,7 @@ def get_classifier(
             threshold=threshold or 0.8,
             detection_upsample=detection_upsample or 1,
             enable_multi_pass=enable_multi_pass or False,
+            use_alignment=False,
         )
     
     elif classifier_type.startswith("insightface"):
@@ -1176,6 +1282,7 @@ def get_classifier(
             threshold=threshold or 0.6,
             detection_upsample=detection_upsample or 1,
             enable_multi_pass=enable_multi_pass or False,
+            use_alignment=True,
         )
     
     else:

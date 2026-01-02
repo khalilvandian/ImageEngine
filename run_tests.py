@@ -127,30 +127,63 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Run quick test (HOG model)
+  # Legacy models (backward compatible)
   python run_tests.py --quick
-  
-  # Test specific model
   python run_tests.py --model cnn
   python run_tests.py --model vit
   
-  # Test all models
+  # New modular architecture (with alignment)
+  python run_tests.py --model insightface
+  python run_tests.py --model insightface_buffalo_m
+  
+  # Test all models (legacy + modular variants)
   python run_tests.py --model all
   
   # Use custom testset
-  python run_tests.py --model hog --testset testsets/hughJackmanTest.json
+  python run_tests.py --model insightface --testset testsets/hughJackmanTest.json
   
   # Use custom celebrities file
   python run_tests.py --model cnn --celebrities data/custom_celebs.json
+  
+  # Detection-only test
+  python run_tests.py --detector-only --detector-model cnn
         """
     )
     
     parser.add_argument(
         "--model",
         type=str,
-        choices=["cnn", "hog", "vit", "all"],
+        choices=["cnn", "hog", "vit", "insightface", "insightface_buffalo_m", "insightface_buffalo_s", "unified", "all"],
         default="hog",
-        help="Model to test (default: hog)",
+        help="Model to test (default: hog). Use 'unified' for custom detection+embedding+matching combinations.",
+    )
+
+    parser.add_argument(
+        "--detection",
+        type=str,
+        default=None,
+        help="Detection model for 'unified' mode: buffalo_l, buffalo_m, buffalo_s, cnn, hog, antelopev2",
+    )
+
+    parser.add_argument(
+        "--embedding",
+        type=str,
+        default=None,
+        help="Embedding model for 'unified' mode: insightface, insightface_buffalo_m, insightface_buffalo_s, face_recognition, vit",
+    )
+
+    parser.add_argument(
+        "--matching",
+        type=str,
+        default=None,
+        help="Matching method for 'unified' mode: cosine_similarity, euclidean_distance, l2_distance",
+    )
+
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=None,
+        help="Similarity threshold for 'unified' mode (0.0-1.0, default varies by embedding)",
     )
 
     parser.add_argument(
@@ -206,6 +239,12 @@ Examples:
         default=None,
         help="Face detection upsample for CNN/HOG (e.g., 2)",
     )
+
+    parser.add_argument(
+        "--alignment",
+        action="store_true",
+        help="Enable landmark-based alignment for InsightFace (enabled by default for insightface models)",
+    )
     
     args = parser.parse_args()
     
@@ -234,13 +273,99 @@ Examples:
         "cnn": "face_recognition_cnn",
         "hog": "face_recognition_hog",
         "vit": "vit_b32",
+        "insightface": "insightface",
+        "insightface_buffalo_m": "insightface_buffalo_m",
+        "insightface_buffalo_s": "insightface_buffalo_s",
     }
     
     try:
-        if args.model == "all":
+        if args.model == "unified":
+            # UNIFIED MODE: fully modular combination
+            if not args.detection or not args.embedding or not args.matching:
+                logger.error("Unified mode requires --detection, --embedding, and --matching parameters")
+                print("❌ Error: Unified mode requires --detection, --embedding, and --matching")
+                print("   Example: python run_tests.py --model unified --detection buffalo_l --embedding insightface --matching cosine_similarity")
+                sys.exit(1)
+            
+            print(f"\n{'='*80}")
+            print(f"🔧 MODULAR TEST: detection={args.detection} | embedding={args.embedding} | matching={args.matching} | threshold={args.threshold or 'default'}")
+            print(f"{'='*80}\n")
+            
+            # Load test set
+            image_paths, ground_truth = load_test_set(args.testset)
+            print(f"✓ Loaded {len(image_paths)} images from {args.testset}")
+            
+            if not image_paths:
+                print("❌ No images found in test set!")
+                return None
+            
+            # Load celebrity data
+            celebrities = load_celebrities_from_json(args.celebrities)
+            if not celebrities:
+                print(f"❌ No celebrity data loaded from {args.celebrities}")
+                return None
+            print(f"✓ Loaded {len(celebrities)} celebrities")
+            
+            # Initialize classifier with modular parameters
+            classifier = get_classifier(
+                "unified",
+                celebrities,
+                detection_model=args.detection,
+                embedding_model=args.embedding,
+                matching_method=args.matching,
+                threshold=args.threshold or 0.6,
+            )
+            
+            if classifier is None:
+                print(f"❌ Could not initialize classifier with given parameters")
+                return None
+            
+            # Run predictions
+            print(f"\n🔄 Running predictions...")
+            predictions = run_classification_on_test_set(
+                classifier,
+                image_paths,
+                output_image_dir=args.output_dir if not args.no_images else None,
+            )
+            
+            # Calculate metrics
+            metrics = calculate_metrics(ground_truth, predictions)
+            
+            # Save results
+            csv_path = save_test_output_to_csv(
+                image_paths, predictions, ground_truth, 
+                f"unified_{args.detection}_{args.embedding}_{args.matching}"
+            )
+            
+            # Display results
+            print(f"\n{'='*80}")
+            print(f"TEST RESULTS: Modular Pipeline")
+            print(f"{'='*80}")
+            print(f"Detection:    {args.detection}")
+            print(f"Embedding:    {args.embedding}")
+            print(f"Matching:     {args.matching}")
+            print(f"Threshold:    {args.threshold or 'default'}")
+            print(f"{'-'*80}")
+            for metric, value in metrics.items():
+                metric_label = metric.replace("_", " ").title()
+                print(f"{metric_label:25s}: {value:.4f}" if isinstance(value, float) else f"{metric_label:25s}: {value}")
+            print(f"\n📄 Results saved to: {csv_path}")
+            print(f"{'='*80}\n")
+            
+            return metrics
+        
+        elif args.model == "all":
             print("🔄 Running tests with all models...\n")
             results = {}
-            for short_name, full_name in model_map.items():
+            # Test legacy models
+            legacy_models = ["cnn", "hog", "vit"]
+            # Test new modular InsightFace variants
+            modular_models = ["insightface", "insightface_buffalo_m", "insightface_buffalo_s"]
+            
+            all_models = legacy_models + modular_models
+            
+            for short_name in all_models:
+                full_name = model_map[short_name]
                 metrics = run_test(
                     full_name,
                     args.testset,
@@ -253,17 +378,33 @@ Examples:
             
             # Summary comparison
             if len(results) > 1:
-                print(f"\n{'='*60}")
-                print("SUMMARY COMPARISON")
-                print(f"{'='*60}")
-                print(f"{'Model':<15} {'Accuracy':<12} {'Precision':<12} {'Recall':<12} {'F1 Score':<12}")
-                print("-" * 60)
+                print(f"\n{'='*80}")
+                print("SUMMARY COMPARISON - ALL MODELS")
+                print(f"{'='*80}")
+                print(f"{'Model':<25} {'Accuracy':<12} {'Precision':<12} {'Recall':<12} {'F1 Score':<12}")
+                print("-" * 80)
                 for model, metrics in results.items():
-                    print(f"{model.upper():<15} {metrics.get('accuracy', 0):<12.4f} "
+                    print(f"{model.upper():<25} {metrics.get('accuracy', 0):<12.4f} "
                           f"{metrics.get('precision', 0):<12.4f} "
                           f"{metrics.get('recall', 0):<12.4f} "
                           f"{metrics.get('f1_score', 0):<12.4f}")
-                print(f"{'='*60}\n")
+                
+                # Separate legacy from modular
+                print(f"\n{'LEGACY MODELS':<25} {'─'*56}")
+                legacy_results = {k: v for k, v in results.items() if k in legacy_models}
+                if legacy_results:
+                    for model, metrics in legacy_results.items():
+                        print(f"{model.upper():<25} Acc: {metrics.get('accuracy', 0):.4f} | "
+                              f"Prec: {metrics.get('precision', 0):.4f} | F1: {metrics.get('f1_score', 0):.4f}")
+                
+                print(f"\n{'MODULAR (InsightFace + Alignment)':<25} {'─'*56}")
+                modular_results = {k: v for k, v in results.items() if k in modular_models}
+                if modular_results:
+                    for model, metrics in modular_results.items():
+                        print(f"{model.upper():<25} Acc: {metrics.get('accuracy', 0):.4f} | "
+                              f"Prec: {metrics.get('precision', 0):.4f} | F1: {metrics.get('f1_score', 0):.4f}")
+                
+                print(f"{'='*80}\n")
         else:
             full_model_name = model_map[args.model]
             run_test(
