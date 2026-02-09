@@ -481,7 +481,8 @@ class InsightFaceEmbedder(EmbeddingExtractor):
         last_error = None
         for attempt_model, providers, ctx_id in attempts:
             try:
-                self.app = FaceAnalysis(name=attempt_model, allowed_modules=["recognition"], providers=providers)
+                # Require detection + recognition; InsightFace asserts detection is present even if not requested
+                self.app = FaceAnalysis(name=attempt_model, allowed_modules=["detection", "recognition"], providers=providers)
                 self.app.prepare(ctx_id=ctx_id, det_size=(640, 640))
                 self.model_name = attempt_model
                 logger.info(

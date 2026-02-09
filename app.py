@@ -69,13 +69,12 @@ def classify_ui():
                 "insightface_buffalo_m",
                 "insightface_buffalo_s",
                 "insightface_antelopev2",
-                "face_recognition_cnn",
-                "face_recognition_hog",
+                "face_recognition",
                 "vit"
             ],
             index=0,
             label_visibility="collapsed",
-            help="insightface: 512-dim ResNet50 embeddings\nface_recognition_cnn: 128-dim dlib with CNN\nface_recognition_hog: 128-dim dlib with HOG\nvit: 768-dim CLIP Vision Transformer"
+            help="insightface: 512-dim ResNet50 embeddings\nface_recognition: 128-dim dlib (HOG/CNN detector chosen separately)\nvit: 768-dim CLIP Vision Transformer"
         )
     
     with col_match:
@@ -146,18 +145,26 @@ def classify_ui():
                 return
             logger.info(f"Loaded {len(celebrity_data)} celebrities successfully")
 
+            # Match UI selections to classifier defaults (cnn benefits from higher upsample + multi-pass)
+            detection_upsample = 2 if detection_model == "cnn" else 1
+            enable_multi_pass = detection_model == "cnn"
+
             logger.info(f"Initializing unified classifier")
             logger.info(f"  Detection model: {detection_model}")
             logger.info(f"  Embedding model: {embedding_model}")
             logger.info(f"  Matching method: {matching_method}")
             logger.info(f"  Threshold: {threshold}")
+            logger.info(f"  Detection upsample: {detection_upsample}")
+            logger.info(f"  Multi-pass: {enable_multi_pass}")
             classifier = get_classifier(
                 "unified",
                 celebrity_data,
                 detection_model=detection_model,
                 embedding_model=embedding_model,
                 matching_method=matching_method,
-                threshold=threshold
+                threshold=threshold,
+                detection_upsample=detection_upsample,
+                enable_multi_pass=enable_multi_pass
             )
             logger.info("Classifier initialized successfully")
             if classifier is None:
@@ -271,13 +278,12 @@ def testset_ui():
                 "insightface_buffalo_m",
                 "insightface_buffalo_s",
                 "insightface_antelopev2",
-                "face_recognition_cnn",
-                "face_recognition_hog",
+                "face_recognition",
                 "vit"
             ],
             index=0,
             label_visibility="collapsed",
-            help="insightface: 512-dim ResNet50 embeddings\nface_recognition_cnn: 128-dim dlib with CNN\nface_recognition_hog: 128-dim dlib with HOG\nvit: 768-dim CLIP Vision Transformer",
+            help="insightface: 512-dim ResNet50 embeddings\nface_recognition: 128-dim dlib (HOG/CNN detector chosen separately)\nvit: 768-dim CLIP Vision Transformer",
             key="test_embedding_model"
         )
     
@@ -358,18 +364,25 @@ def testset_ui():
                 return
             logger.info(f"Loaded {len(celebrity_data)} celebrities successfully")
 
+            detection_upsample = 2 if detection_model == "cnn" else 1
+            enable_multi_pass = detection_model == "cnn"
+
             logger.info(f"Initializing unified test classifier")
             logger.info(f"  Detection model: {detection_model}")
             logger.info(f"  Embedding model: {embedding_model}")
             logger.info(f"  Matching method: {matching_method}")
             logger.info(f"  Threshold: {threshold}")
+            logger.info(f"  Detection upsample: {detection_upsample}")
+            logger.info(f"  Multi-pass: {enable_multi_pass}")
             classifier = get_classifier(
                 "unified",
                 celebrity_data,
                 detection_model=detection_model,
                 embedding_model=embedding_model,
                 matching_method=matching_method,
-                threshold=threshold
+                threshold=threshold,
+                detection_upsample=detection_upsample,
+                enable_multi_pass=enable_multi_pass
             )
             logger.info("Test classifier initialized successfully")
             if classifier is None:

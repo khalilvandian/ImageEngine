@@ -1,8 +1,10 @@
 concettiComputerVision/
 image_outputs/
 Images/Archive/
+Images/Uncleaned Data/
 test_outputs/
 Archive/
+notebooks/data/extracted_faces/
 output_hugh_jackman_detection/
 output_lapress_hugh_jackman_detection/
 venv/

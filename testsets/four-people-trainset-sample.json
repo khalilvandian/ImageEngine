@@ -1,0 +1,2488 @@
+[
+  {
+    "image_name": "LP_2256741.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_2256741.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354069000007x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354069000007x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_5518227.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_5518227.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00347966000033x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000033x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23299315.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299315.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23299315.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00353959000041x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353959000041x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00353732000001x.jpg",
+    "path": "Images/four-people Testset/None/01-00353732000001x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "23944100_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23944100_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23299289.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23299289.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00353937000018x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353937000018x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_5182272.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5182272.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "23950221_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23950221_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_5182376.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5182376.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354793000028x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354793000028x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23534608.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23534608.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_460536.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_460536.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23437615.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23437615.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4750451.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4750451.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "23947908_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23947908_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00348241000090x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348241000090x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_10089736.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_10089736.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353937000047x.jpg",
+    "path": "Images/four-people Testset/None/01-00353937000047x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00354652000002x.jpg",
+    "path": "Images/four-people Testset/None/01-00354652000002x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_4525931.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4525931.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353749000032x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353749000032x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_4238920.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4238920.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354113000001m.jpg",
+    "path": "Images/four-people Testset/None/01-00354113000001m.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23485038.jpg",
+    "path": "Images/four-people Testset/None/LP_23485038.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23889818.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23889818.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23299298.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299298.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23299298.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23576976.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23576976.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23860463.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23860463.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23489020.jpg",
+    "path": "Images/four-people Testset/None/LP_23489020.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23437610.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23437610.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_1906997.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_1906997.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_4717645.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4717645.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354052000003x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354052000003x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23489030.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23489030.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00354092000009x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354092000009x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_4991841.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4991841.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354772000011x.jpg",
+    "path": "Images/four-people Testset/None/01-00354772000011x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "007_68abd54d.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/007_68abd54d.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354793000037x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354793000037x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23299560.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299560.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23299560.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23576969.jpg",
+    "path": "Images/four-people Testset/None/LP_23576969.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_1091866.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_1091866.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354092000010x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354092000010x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00353937000016x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353937000016x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00354775000020x.jpg",
+    "path": "Images/four-people Testset/None/01-00354775000020x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "23888275_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23888275_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23576972.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23576972.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "011_17b8991d.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/011_17b8991d.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "006_ff6876d9.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/006_ff6876d9.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_5900650.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5900650.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_4716433.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4716433.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23555972.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23555972.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_5182288.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5182288.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_5182299.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5182299.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354573000016x.jpg",
+    "path": "Images/four-people Testset/None/01-00354573000016x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "098_5cb67f9d.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/098_5cb67f9d.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_4525880.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4525880.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_13420859.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_13420859.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354052000002x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354052000002x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00353959000029x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353959000029x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00354069000009x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354069000009x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00348241000108x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348241000108x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353937000069x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353937000069x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00353732000007x.jpg",
+    "path": "Images/four-people Testset/None/01-00353732000007x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23299572.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299572.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23911978.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23911978.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "Hugh Jackman_106.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/Hugh Jackman_106.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354775000057x.jpg",
+    "path": "Images/four-people Testset/None/01-00354775000057x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_2256755.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_2256755.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00348834000009x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348834000009x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_21204636.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_21204636.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_3040941.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_3040941.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_5182295.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5182295.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23427413.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23427413.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_2252968.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_2252968.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353735000012x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353735000012x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "004_41caa173.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/004_41caa173.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_1907025.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_1907025.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354052000011x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354052000011x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23907923.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23907923.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23485033.jpg",
+    "path": "Images/four-people Testset/None/LP_23485033.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00354688000016x.jpg",
+    "path": "Images/four-people Testset/None/01-00354688000016x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00347966000053x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000053x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00347966000049x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000049x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_4991778.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4991778.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354686000025x.jpg",
+    "path": "Images/four-people Testset/None/01-00354686000025x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23437577.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23437577.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23299297.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299297.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23299601.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299601.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23299601.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4717642.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4717642.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00347245000015x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000015x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353735000018x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353735000018x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00353749000013x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353749000013x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23437578.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23437578.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23521500.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23521500.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23806404.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23806404.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23485047.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23485047.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23911974.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23911974.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23534607.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23534607.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "Hugh Jackman_110.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/Hugh Jackman_110.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354069000029x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354069000029x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_13420873.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_13420873.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354775000030x.jpg",
+    "path": "Images/four-people Testset/None/01-00354775000030x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_5900547.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5900547.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23427412.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23427412.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23319737.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23319737.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23319737.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_8631829.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_8631829.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00347245000054x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000054x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354686000010x.jpg",
+    "path": "Images/four-people Testset/None/01-00354686000010x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23319736.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23319736.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23319736.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_10089731.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_10089731.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_5518351.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_5518351.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354132000004m.jpg",
+    "path": "Images/four-people Testset/None/01-00354132000004m.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00328893000015m.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/01-00328893000015m.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353749000010x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353749000010x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_1252248.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_1252248.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354120000044x.jpg",
+    "path": "Images/four-people Testset/None/01-00354120000044x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00354573000034x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354573000034x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_1252346.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_1252346.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353993000011x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353993000011x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00347245000044x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000044x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354069000003x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354069000003x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23856208.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_23856208.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_460510.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_460510.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_1252240.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_1252240.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00348834000004x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348834000004x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_20655097.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_20655097.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354088000003x.jpg",
+    "path": "Images/four-people Testset/None/01-00354088000003x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00353993000026x.jpg",
+    "path": "Images/four-people Testset/None/01-00353993000026x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_8631823.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_8631823.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "066_03ff28be.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/066_03ff28be.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353959000039x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353959000039x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "Hugh Jackman_111.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/Hugh Jackman_111.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23299604.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299604.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23299604.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "23950220_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23950220_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354775000018x.jpg",
+    "path": "Images/four-people Testset/None/01-00354775000018x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_4713737.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4713737.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354069000023x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354069000023x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_4717630.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4717630.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354686000035x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354686000035x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23326005.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23326005.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4713749.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4713749.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00348834000001x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348834000001x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_4991783.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4991783.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353937000058x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353937000058x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "037_f5b8733a.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/037_f5b8733a.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_5900584.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5900584.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23806135.jpg",
+    "path": "Images/four-people Testset/None/LP_23806135.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23299294.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23299294.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "054_4274a548.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/054_4274a548.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23860470.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23860470.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00353993000016x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353993000016x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00348241000034x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348241000034x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "23947911_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23947911_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23691255.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23691255.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4775003.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4775003.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "088_2ec116fe.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/088_2ec116fe.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353732000021x.jpg",
+    "path": "Images/four-people Testset/None/01-00353732000021x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23053483.jpg",
+    "path": "Images/four-people Testset/None/LP_23053483.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00354793000035x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354793000035x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23806083.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23806083.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00353911000006x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353911000006x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23485049.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23485049.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23465833.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23465833.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23680971.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23680971.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23534620.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23534620.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "23888271_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23888271_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23299311.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299311.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00353959000014x.jpg",
+    "path": "Images/four-people Testset/None/01-00353959000014x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00354092000020x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354092000020x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23691302.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23691302.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_1091841.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_1091841.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_10089734.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_10089734.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00347245000046x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000046x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00348717000018x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348717000018x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_21204623.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_21204623.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_4713735.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4713735.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353936000010x.jpg",
+    "path": "Images/four-people Testset/None/01-00353936000010x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_21208557.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_21208557.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_5896868.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_5896868.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00347245000017x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000017x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_3040938.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_3040938.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00347966000042x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000042x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_5900604.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5900604.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353937000014x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353937000014x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_4748693.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4748693.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354092000013x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354092000013x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "23932912_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23932912_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00348794000012x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348794000012x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23860460.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23860460.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23555988.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23555988.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_21204630.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_21204630.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353993000024x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353993000024x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23299694.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299694.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23299694.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00347245000058x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000058x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_4713724.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4713724.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23299616.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299616.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00353937000068x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353937000068x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_2177026.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_2177026.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23860471.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23860471.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00353993000012x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353993000012x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23299569.jpg",
+    "path": "Images/four-people Testset/None/LP_23299569.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23299706.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299706.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23299706.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4525965.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4525965.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_4525906.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4525906.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_13420869.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_13420869.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "Hugh Jackman_103.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/Hugh Jackman_103.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_460518.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_460518.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_21208561.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_21208561.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_21209063.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_21209063.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354678000007x.jpg",
+    "path": "Images/four-people Testset/None/01-00354678000007x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00353959000044x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353959000044x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_8631836.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_8631836.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_21204637.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_21204637.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23485028.jpg",
+    "path": "Images/four-people Testset/None/LP_23485028.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23907589.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23907589.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "Hugh Jackman_12.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/Hugh Jackman_12.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00347966000017x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000017x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00347966000008x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000008x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00348794000005x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348794000005x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23299312.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299312.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00354573000009x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354573000009x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_4774990.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4774990.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353911000007x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353911000007x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_4716413.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4716413.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353985000051x.jpg",
+    "path": "Images/four-people Testset/None/01-00353985000051x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23299561.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299561.jpg",
+    "other_paths": [
+      "Images/four-people Testset/Giorgia Meloni/LP_23299561.jpg"
+    ],
+    "labels": [
+      "Donald Trump",
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4991815.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_4991815.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354772000009x.jpg",
+    "path": "Images/four-people Testset/None/01-00354772000009x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23576982.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23576982.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00354793000038x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354793000038x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23691401.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23691401.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00354772000001x.jpg",
+    "path": "Images/four-people Testset/None/01-00354772000001x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_1252382.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_1252382.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_5115600.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_5115600.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00347245000019x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000019x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00347966000051x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000051x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23007416.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23007416.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4748651.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4748651.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_22425036.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_22425036.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23806391.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23806391.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "059_aef6a0a8.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/059_aef6a0a8.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "Hugh Jackman_109.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/Hugh Jackman_109.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00329545000394m.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/01-00329545000394m.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354120000031x.jpg",
+    "path": "Images/four-people Testset/None/01-00354120000031x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00347966000010x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000010x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00347245000009x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000009x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353732000038x.jpg",
+    "path": "Images/four-people Testset/None/01-00353732000038x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00329714000017m.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/01-00329714000017m.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354069000043x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354069000043x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_3040948.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_3040948.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353732000006x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353732000006x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00348241000030x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00348241000030x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_4750431.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4750431.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23743497.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23743497.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23907634.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23907634.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23326003.jpg",
+    "path": "Images/four-people Testset/None/LP_23326003.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_2253036.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_2253036.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354686000002x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354686000002x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23299285.jpg",
+    "path": "Images/four-people Testset/Donald Trump/LP_23299285.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00347966000004x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347966000004x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353732000014x.jpg",
+    "path": "Images/four-people Testset/None/01-00353732000014x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00353735000014x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353735000014x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_4713716.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4713716.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354652000004x.jpg",
+    "path": "Images/four-people Testset/None/01-00354652000004x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23555990.jpg",
+    "path": "Images/four-people Testset/None/LP_23555990.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00354191000010m.jpg",
+    "path": "Images/four-people Testset/None/01-00354191000010m.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "077_08ff1da6.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/077_08ff1da6.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00347245000038x.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/01-00347245000038x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353873000012x.jpg",
+    "path": "Images/four-people Testset/None/01-00353873000012x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23485025.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23485025.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4748660.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4748660.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00353732000030x.jpg",
+    "path": "Images/four-people Testset/None/01-00353732000030x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "Hugh Jackman_4.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/Hugh Jackman_4.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354134000003x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354134000003x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00354235000007m.jpg",
+    "path": "Images/four-people Testset/None/01-00354235000007m.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "01-00353749000019x.jpg",
+    "path": "Images/four-people Testset/None/01-00353749000019x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "23888277_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23888277_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354069000046x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354069000046x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00354775000023x.jpg",
+    "path": "Images/four-people Testset/None/01-00354775000023x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_8631825.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_8631825.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_13437852.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_13437852.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00353749000041x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353749000041x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_4748675.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4748675.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_23743509.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23743509.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_4750442.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_4750442.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "LP_33950.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_33950.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "LP_23299566.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23299566.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00353993000002x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00353993000002x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "01-00354688000005x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354688000005x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23806242.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23806242.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00354069000012x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354069000012x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_2253055.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/LP_2253055.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354573000023x.jpg",
+    "path": "Images/four-people Testset/None/01-00354573000023x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_3040949.jpg",
+    "path": "Images/four-people Testset/Hugh Jackman/LP_3040949.jpg",
+    "other_paths": [],
+    "labels": [
+      "Hugh Jackman"
+    ]
+  },
+  {
+    "image_name": "01-00354723000064x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354723000064x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "23888278_medium.jpg",
+    "path": "Images/four-people Testset/Lionel Messi/23888278_medium.jpg",
+    "other_paths": [],
+    "labels": [
+      "Lionel Messi"
+    ]
+  },
+  {
+    "image_name": "01-00354134000001x.jpg",
+    "path": "Images/four-people Testset/Donald Trump/01-00354134000001x.jpg",
+    "other_paths": [],
+    "labels": [
+      "Donald Trump"
+    ]
+  },
+  {
+    "image_name": "LP_23911960.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23911960.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "LP_23437611.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23437611.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00353732000002x.jpg",
+    "path": "Images/four-people Testset/None/01-00353732000002x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  },
+  {
+    "image_name": "LP_23860456.jpg",
+    "path": "Images/four-people Testset/Giorgia Meloni/LP_23860456.jpg",
+    "other_paths": [],
+    "labels": [
+      "Giorgia Meloni"
+    ]
+  },
+  {
+    "image_name": "01-00354023000002x.jpg",
+    "path": "Images/four-people Testset/None/01-00354023000002x.jpg",
+    "other_paths": [],
+    "labels": [
+      "None"
+    ]
+  }
+]
