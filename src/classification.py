@@ -49,6 +49,13 @@ def load_celebrities_from_json(json_path):
     """
     Loads celebrity data from a JSON file.
 
+    Supports two formats:
+      - New format: [{"name": "...", "reference_images": [{"image_path": "..."}]}]
+      - Legacy format: [{"name": "...", "reference_image_path": "..."}]
+
+    The new format is normalised to the legacy flat format so that all
+    downstream code (UnifiedClassifier, ViTClassifier, etc.) keeps working.
+
     Args:
         json_path (str): The path to the JSON file.
 
@@ -60,14 +67,33 @@ def load_celebrities_from_json(json_path):
     try:
         with open(json_path, 'r') as f:
             celebrities_data = json.load(f)
-        logger.info(f"Successfully loaded {len(celebrities_data)} celebrities from {json_path}")
-        return celebrities_data
     except FileNotFoundError as e:
         logger.error(f"JSON file not found at {json_path}: {e}", exc_info=True)
         return []
     except json.JSONDecodeError as e:
         logger.error(f"Could not decode JSON from {json_path}: {e}", exc_info=True)
         return []
+
+    # Normalise: if entries use the new "reference_images" list format,
+    # flatten them into {name, reference_image_path} dicts the rest of
+    # the codebase expects.  Each reference image becomes its own entry
+    # so that multiple reference images per person are supported.
+    normalised = []
+    for entry in celebrities_data:
+        if "reference_image_path" in entry:
+            # Already in legacy flat format
+            normalised.append(entry)
+        elif "reference_images" in entry:
+            for ref in entry["reference_images"]:
+                normalised.append({
+                    "name": entry["name"],
+                    "reference_image_path": ref["image_path"],
+                })
+        else:
+            logger.warning(f"Skipping entry with unrecognised format: {entry}")
+
+    logger.info(f"Successfully loaded {len(normalised)} celebrity reference(s) from {json_path}")
+    return normalised
 
 # --- Face Detector Class ---
 
@@ -618,7 +644,15 @@ class ViTEmbedder(EmbeddingExtractor):
             
             with torch.no_grad():
                 inputs = self.processor(images=face_pil, return_tensors="pt").to(self.device)
-                embedding = self.model.get_image_features(**inputs)
+                result = self.model.get_image_features(**inputs)
+            
+            # transformers >=5.x returns BaseModelOutputWithPooling instead of a tensor
+            if hasattr(result, 'pooler_output'):
+                embedding = result.pooler_output
+            elif hasattr(result, 'last_hidden_state'):
+                embedding = result.last_hidden_state[:, 0, :]  # CLS token
+            else:
+                embedding = result  # fallback: assume it's already a tensor
             
             return embedding.cpu().numpy().flatten()
         except Exception as e:

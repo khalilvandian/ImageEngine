@@ -131,9 +131,9 @@ def classify_ui():
             logger.info("Resolving celebrity data JSON file path...")
             celebrities_json_path = resolve_uploaded_or_default(
                 celebrities_json_file,
-                default_path="data/celebrities.json",
+                default_path="data/references.json",
                 tempdir=tempdir,
-                filename="celebrities.json",
+                filename="references.json",
             )
             logger.info(f"Using celebrity data from: {celebrities_json_path}")
 
@@ -240,7 +240,7 @@ def testset_ui():
         )
     with col2:
         celebrities_json_file = st.file_uploader(
-            "Celebrities JSON (defaults to data/celebrities.json)",
+            "Celebrities JSON (defaults to data/references.json)",
             type=["json"],
             key="celebrities_json_upload_test",
         )
@@ -351,9 +351,9 @@ def testset_ui():
 
             celebrities_json_path = resolve_uploaded_or_default(
                 celebrities_json_file,
-                default_path="data/celebrities.json",
+                default_path="data/references.json",
                 tempdir=tempdir,
-                filename="celebrities_test.json",
+                filename="references_test.json",
             )
 
             logger.info("Loading celebrity reference data...")

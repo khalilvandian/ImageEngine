@@ -210,8 +210,8 @@ Examples:
     parser.add_argument(
         "--celebrities",
         type=str,
-        default="data/celebrities.json",
-        help="Path to celebrities JSON (default: data/celebrities.json)",
+        default="data/references.json",
+        help="Path to celebrities/references JSON (default: data/references.json)",
     )
     
     parser.add_argument(

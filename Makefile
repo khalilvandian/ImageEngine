@@ -2,7 +2,7 @@
 
 # Default test parameters
 TESTSET ?= testsets/test_set.json
-CELEBRITIES ?= data/celebrities.json
+CELEBRITIES ?= data/references.json
 SAVE_IMAGES ?= 1
 FR_UPSAMPLE ?= 1
 DETECTOR_MODEL ?= cnn
