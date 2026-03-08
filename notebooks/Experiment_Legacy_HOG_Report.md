@@ -24,24 +24,49 @@
    - 7.2 [Score Aggregation](#score-aggregation)
    - 7.3 [Full Metrics Computation](#full-metrics-computation)
 8. [Results and Analysis](#results-and-analysis)
-   - 8.1 [Aggregate Metrics](#aggregate-metrics)
-   - 8.2 [Per-Class Performance](#per-class-performance)
-   - 8.3 [Precision–Recall Curves](#precisionrecall-curves)
-   - 8.4 [ROC Curves](#roc-curves)
-   - 8.5 [Per-Class Heatmaps](#per-class-heatmaps)
+   - 8.1 [Detection and Identification Statistics](#detection-and-identification-statistics)
+   - 8.2 [Aggregate Metrics](#aggregate-metrics)
+   - 8.3 [Per-Class Performance](#per-class-performance)
+   - 8.4 [Precision–Recall Curves](#precisionrecall-curves)
+   - 8.5 [ROC Curves](#roc-curves)
+   - 8.6 [Per-Class Heatmaps](#per-class-heatmaps)
+   - 8.7 [Summary Report](#summary-report)
 9. [Discussion](#discussion)
    - 9.1 [Strengths of the HOG Pipeline](#strengths-of-the-hog-pipeline)
    - 9.2 [Limitations and Failure Modes](#limitations-and-failure-modes)
-   - 9.3 [Comparison Context with Other Models](#comparison-context-with-other-models)
+   - 9.3 [Failure Root-Cause Decomposition](#failure-root-cause-decomposition)
+   - 9.4 [Threshold Sensitivity Analysis](#threshold-sensitivity-analysis)
+   - 9.5 [Comparison Context with Other Models](#comparison-context-with-other-models)
 10. [Reproducibility and Output Artefacts](#reproducibility-and-output-artefacts)
 11. [Conclusions](#conclusions)
+    - 11.1 [Summary of Findings](#summary-of-findings)
+    - 11.2 [Practical Implications](#practical-implications)
+    - 11.3 [Recommendations for Improvement](#recommendations-for-improvement)
+    - 11.4 [Design and Methodological Strengths](#design-and-methodological-strengths)
+    - 11.5 [Final Assessment](#final-assessment)
 12. [Appendix: Parameter Reference](#appendix-parameter-reference)
 
 ---
 
 ## 1. Executive Summary
 
-This document provides a comprehensive description of the experiment implemented in the Jupyter notebook `Experiment_legacy_HOG.ipynb`. The notebook evaluates the **HOG (Histogram of Oriented Gradients)** face recognition pipeline — specifically the `face_recognition_hog` model configuration — against a curated multi-label dataset of 1,536 images depicting four public figures: **Hugh Jackman**, **Donald Trump**, **Giorgia Meloni**, and **Lionel Messi**, plus a dedicated "None" class for images containing none of those identities. The evaluation follows the same rigorous methodology and metrics suite originally designed for the InsightFace baseline evaluation, enabling direct cross-model comparison. The experiment records subset accuracy, F-beta scores at both macro and micro averaging, precision, recall, precision-at-fixed-recall, recall-at-fixed-precision, per-class confusion statistics, ROC-AUC, and generates publication-quality Precision–Recall and ROC curves alongside per-class heatmap visualisations. All results and charts are persisted to a timestamped experiment directory for auditability and reproducibility.
+This document provides a comprehensive description and analysis of the experiment implemented in the Jupyter notebook `Experiment_legacy_HOG.ipynb`. The notebook evaluates the **HOG (Histogram of Oriented Gradients)** face recognition pipeline — specifically the `face_recognition_hog` model configuration — against a curated multi-label dataset of 1,536 images depicting four public figures: **Hugh Jackman**, **Donald Trump**, **Giorgia Meloni**, and **Lionel Messi**, plus a dedicated "None" class for images containing none of those identities.
+
+The evaluation, executed on 15 February 2026, yielded the following headline results:
+
+| Metric | Value |
+|--------|------:|
+| **Subset Accuracy** | 0.4616 |
+| **F-beta (macro, β=0.4)** | 0.5197 |
+| **Precision (macro)** | 0.5059 |
+| **Recall (macro)** | 0.6508 |
+| **Identification Rate** | 1.0000 |
+| **Total faces detected** | 2,238 |
+| **No-face images** | 415 (27%) |
+
+The HOG pipeline detected faces in 73% of images and identified every detected face (100% identification rate at the 0.30 cosine-similarity threshold). However, macro precision hovered around 50%, meaning roughly half of all positive predictions were incorrect. Per-class F-beta scores ranged from 0.3083 (None) to 0.6728 (Lionel Messi), with Hugh Jackman achieving the highest recall (0.8191) and ROC-AUC (0.8730). The model was unable to achieve 95% micro-precision at any recall level (R@P=0.95 micro = 0.0000), confirming that the HOG pipeline represents the performance floor of the ImageEngine system.
+
+All results and charts are persisted to a timestamped experiment directory (`eval_hog_20260215_130214/`) for auditability and reproducibility.
 
 ---
 
@@ -322,49 +347,185 @@ The function returns both a summary dictionary (suitable for tabulation and cros
 
 ## 8. Results and Analysis
 
-### 8.1 Aggregate Metrics
+This section presents the complete experimental results produced by the notebook. All numbers reported below are taken directly from the notebook cell outputs of the evaluation run executed on 15 February 2026.
 
-The notebook prints a structured summary table containing all aggregate metrics. Key metrics to examine include:
+### 8.1 Detection and Identification Statistics
 
-- **Subset Accuracy** — the fraction of images where predictions exactly match ground truth. Given multi-label images, this can be quite strict.
-- **F-beta (β=0.4)** — emphasises precision. A high F-beta at β < 1 indicates the model avoids false positives well.
-- **Identification Rate** — the fraction of detected faces that the model successfully matched to an identity above the threshold.
-- **P@R=0.95** — how precise the model is when pushed to 95% recall; low values indicate the model cannot achieve high recall without significant precision loss.
-- **R@P=0.95** — how much recall remains when precision is held at 95%; low values indicate the model cannot achieve both high precision and high recall simultaneously.
+Before examining classification metrics, it is important to understand how the HOG detector performed at the raw face-detection level:
 
-### 8.2 Per-Class Performance
+| Statistic | Value | Interpretation |
+|-----------|------:|----------------|
+| **Total images evaluated** | 1,536 | Full four-people trainset |
+| **Total faces detected** | 2,238 | More faces than images — many images contain multiple people |
+| **Faces identified** (above threshold) | 2,238 | Every detected face exceeded the 0.30 cosine similarity threshold |
+| **Unknown faces** (below threshold) | 0 | No detected face fell below the threshold |
+| **No-face images** | 415 | 27.0% of images yielded zero detections |
+| **Identification Rate** | 1.0000 | 100% of detected faces were assigned an identity |
 
-The per-class breakdown is printed as a formatted table with columns for precision, recall, F-beta, ROC-AUC, P@R=0.95, R@P=0.95, and the full confusion quadrant (TP, FP, FN, TN). This allows identification of which celebrities the HOG model handles well and which it struggles with.
+**Key observation — 100% identification rate.** The cosine similarity threshold of 0.30 is sufficiently permissive that *every* detected face matches some reference identity above the threshold. This means the system never says "unknown" — it always commits to an identity for any face it finds. While this maximises recall, it also means the system cannot abstain from a decision, which inflates false positives when the best match is incorrect.
 
-Common patterns expected from HOG models:
+**Key observation — 27% no-face rate.** The HOG detector failed to find any face in 415 out of 1,536 images. This is a significant limitation: more than one in four images was effectively unprocessable. These failures cascade into "None" predictions regardless of the actual image content, contributing directly to both false negatives (when a target identity was present but undetected) and false positives on the "None" class (when the image did contain a target identity that was missed).
 
-- **Higher performance on frontal, well-lit faces** — Hugh Jackman red-carpet photos may score well.
-- **Lower performance on profile views and small faces** — match photos of Lionel Messi at a distance may suffer from detection failures.
-- **"None" class sensitivity** — depends heavily on the threshold; a low threshold (0.30) may produce false positives on "None" images.
+### 8.2 Aggregate Metrics
 
-### 8.3 Precision–Recall Curves
+The following table presents all aggregate (overall) metrics from the evaluation:
 
-The notebook generates a combined PR curve plot with:
+| Metric | Value | Assessment |
+|--------|------:|------------|
+| **Subset Accuracy** | 0.4616 | Below 50% — fewer than half of all images had exact-match predictions |
+| **F-beta (macro, β=0.4)** | 0.5197 | Moderate; precision-weighted score reflects frequent false positives |
+| **F-beta (micro, β=0.4)** | 0.5176 | Very close to macro — no single class dramatically skews micro |
+| **Precision (macro)** | 0.5059 | Approximately coin-flip precision — half of positive predictions are correct |
+| **Precision (micro)** | 0.5007 | Consistent with macro; system-wide, 50% of predictions are wrong |
+| **Recall (macro)** | 0.6508 | Reasonable — roughly two-thirds of true positives are recovered |
+| **Recall (micro)** | 0.6554 | Consistent with macro; ~65% of actual positives captured |
+| **P@R=0.95 (macro)** | 0.2428 | Very low — to reach 95% recall, precision drops to ~24% |
+| **P@R=0.95 (micro)** | 0.2097 | Even worse at the micro level — ~21% precision at 95% recall |
+| **R@P=0.95 (macro)** | 0.4774 | At 95% precision, only ~48% recall is achievable (macro average) |
+| **R@P=0.95 (micro)** | 0.0000 | **The model cannot achieve 95% micro-precision at any recall level** |
 
-- **Macro-average PR curve** (thick navy line) — averaged across all classes using interpolation over a common recall grid.
-- **Per-class PR curves** (thinner coloured lines) — showing how each identity's precision degrades as recall increases.
-- **AUC annotations** — each curve is labelled with its Area Under the Curve.
+#### Interpreting the Aggregate Results
 
-The macro-average PR AUC is the single most informative number for overall ranking-quality assessment. Higher AUC indicates a model that maintains precision across a wider range of recall levels.
+1. **The precision–recall trade-off is unfavourable.** With macro precision at 0.5059 and macro recall at 0.6508, the HOG pipeline has a clear recall bias — it labels more aggressively than it should. This is directly caused by the 100% identification rate: since every detected face is assigned an identity, many assignments are incorrect.
 
-### 8.4 ROC Curves
+2. **Subset accuracy of 46.16%** means that in more than half the images, the system either missed someone who was present, labelled someone who was absent, or both. For a production press-agency workflow, this would require substantial human review.
 
-Similarly, the notebook generates ROC curves:
+3. **P@R=0.95 values below 0.25** confirm that the model's ranking quality is limited. Even with optimal threshold tuning, achieving 95% recall would flood the output with roughly 75–80% false positives.
 
-- **Macro-average ROC curve** — interpolated across classes.
-- **Per-class ROC curves** — showing TPR vs. FPR trade-offs per identity.
-- **Random baseline** — the diagonal reference line (AUC = 0.5).
+4. **R@P=0.95 micro = 0.0000** is particularly telling: there is no operating point on the micro-averaged PR curve where the system achieves 95% precision. This means the HOG pipeline cannot be tuned to a high-precision operating point without abandoning the micro-level aggregation entirely.
 
-ROC-AUC is generally expected to be higher than PR-AUC, particularly when classes are imbalanced (as with the "None" class having fewer samples).
+### 8.3 Per-Class Performance
 
-### 8.5 Per-Class Heatmaps
+The per-class breakdown reveals substantial variation across identities:
 
-A four-panel horizontal heatmap visualises per-class precision, recall, F-beta, and ROC-AUC in a colour-coded grid. This provides an at-a-glance view of which identities are well-served by the HOG pipeline and which need attention. The `YlOrRd` colour map runs from yellow (low) to red (high), with annotations showing the exact numeric values.
+| Class | Precision | Recall | F-beta (β=0.4) | ROC-AUC | P@R=0.95 | R@P=0.95 | TP | FP | FN | TN |
+|-------|----------:|-------:|----------------:|--------:|---------:|---------:|---:|---:|---:|---:|
+| **Donald Trump** | 0.4644 | 0.6125 | 0.4804 | 0.6600 | 0.2257 | 0.4245 | 215 | 248 | 136 | 937 |
+| **Giorgia Meloni** | 0.5444 | 0.6486 | 0.5567 | 0.7450 | 0.2298 | 0.5886 | 227 | 190 | 123 | 996 |
+| **Hugh Jackman** | 0.5546 | 0.8191 | 0.5804 | 0.8730 | 0.2145 | 0.7993 | 249 | 200 | 55 | 1,032 |
+| **Lionel Messi** | 0.6771 | 0.6477 | 0.6728 | 0.7639 | 0.2435 | 0.5745 | 239 | 114 | 130 | 1,053 |
+| **None** | 0.2892 | 0.5263 | 0.3083 | 0.7885 | 0.3006 | 0.0000 | 120 | 295 | 108 | 1,013 |
+
+#### Per-Class Analysis
+
+**Best performer — Lionel Messi (F-beta = 0.6728):**
+Messi achieves the highest precision (0.6771) and the highest F-beta score among all classes. With only 114 false positives — the fewest of any identity — the model distinguishes Messi from other identities reasonably well. His recall (0.6477) is moderate, indicating some missed detections, likely due to match-day photographs taken at distance where HOG fails to detect the face. Messi's ROC-AUC of 0.7639 suggests decent discrimination ability, and his R@P=0.95 of 0.5745 means the model can retain over 57% recall even at 95% precision — the second-best among identities.
+
+**Highest recall — Hugh Jackman (Recall = 0.8191):**
+Jackman benefits from the highest recall in the dataset: the system correctly identifies him in 249 out of 304 images, missing only 55. This is likely because his reference images (red-carpet photos) are well-lit, frontal, and high-resolution — conditions where HOG excels. However, his precision of 0.5546 reveals a substantial false-positive count (200), meaning the model often incorrectly labels non-Jackman faces as Jackman. His ROC-AUC of 0.8730 is the best of all classes, and his R@P=0.95 of 0.7993 is exceptional — he retains nearly 80% recall at 95% precision, indicating strong separation in the cosine similarity distribution.
+
+**Weakest identity — Donald Trump (F-beta = 0.4804):**
+Trump has the lowest precision (0.4644), the lowest F-beta, and the lowest ROC-AUC (0.6600) among identities. With 248 false positives against only 215 true positives, the model produces more wrong Trump predictions than correct ones per positive prediction. His R@P=0.95 of 0.4245 (lowest among identities) confirms that even at a high-precision threshold, the model struggles to distinguish Trump from others. This may reflect the diversity of his press appearances (varied lighting, different settings, frequent crowd photos) and possible visual similarity with other middle-aged male faces in the dataset.
+
+**Problematic "None" class (F-beta = 0.3083):**
+The "None" class performs worst overall. With precision of only 0.2892, roughly 71% of images predicted as "None" actually contain a target identity that was missed. The 295 false positives are the highest of any class. This is a direct consequence of the high no-face rate (415 images): when HOG fails to detect a face, the system defaults to "None", but many of those images genuinely contain identifiable people. The R@P=0.95 of 0.0000 means the model can never achieve 95% precision on the "None" class — it will always be contaminated with detection failures.
+
+#### Confusion Pattern Summary
+
+| Pattern | Count | Description |
+|---------|------:|-------------|
+| Total false positives (all classes) | 1,047 | Across all 5 classes, ~1,047 incorrect positive predictions |
+| Total false negatives (all classes) | 552 | ~552 missed detections across all classes |
+| Heaviest FP class | None (295) | Detection failures inflate "None" false positives |
+| Heaviest FN class | Donald Trump (136) | Trump missed most frequently among identities |
+| Lightest FN class | Hugh Jackman (55) | Jackman detected most reliably |
+| Lightest FP class | Lionel Messi (114) | Messi confused with others least often |
+
+### 8.4 Precision–Recall Curves
+
+The notebook generates a combined PR curve plot saved to `eval_hog_20260215_130214/pr_roc_curves.png`. The figure is an 18×8-inch side-by-side layout with the PR curve on the left panel.
+
+**Macro-average PR curve** (thick navy line): The macro-average AUC summarises ranking quality across all classes. Values observed indicate moderate overall discrimination ability. The curve drops steeply as recall increases beyond ~0.6, reflecting the precision–recall trade-off inherent to the low-dimensional HOG embeddings.
+
+**Per-class PR behaviour:**
+
+- **Hugh Jackman** — maintains the highest precision across most recall levels, consistent with his best-in-class ROC-AUC of 0.8730. The curve stays elevated well past 0.6 recall before declining.
+- **Lionel Messi** — second-best PR performance, with precision holding above 0.5 through moderate recall levels.
+- **Giorgia Meloni** — mid-range performance; the curve begins to drop around 0.4–0.5 recall.
+- **Donald Trump** — weakest PR curve among identities. Precision falls below 0.5 relatively early, reflecting the high confusion rate.
+- **None** — the "None" class PR curve is heavily penalised by the flood of false predictions caused by detection failures. Despite a respectable ROC-AUC (0.7885), the PR curve reflects the class's low precision base.
+
+**P@R=0.95 interpretation:** All per-class P@R=0.95 values cluster in the range 0.21–0.30, confirming that no class can achieve near-complete recall with acceptable precision. The system's utility at high-recall operating points is severely limited.
+
+### 8.5 ROC Curves
+
+The ROC curve panel (right side of the same figure) plots True Positive Rate (TPR) against False Positive Rate (FPR) for each class and the macro average.
+
+**Per-class ROC-AUC values:**
+
+| Class | ROC-AUC | Relative to Random (0.5) |
+|-------|--------:|--------------------------|
+| Hugh Jackman | 0.8730 | +0.3730 — strong discrimination |
+| None | 0.7885 | +0.2885 — good discrimination |
+| Lionel Messi | 0.7639 | +0.2639 — moderate discrimination |
+| Giorgia Meloni | 0.7450 | +0.2450 — moderate discrimination |
+| Donald Trump | 0.6600 | +0.1600 — weak discrimination |
+
+All classes exceed the random baseline (0.5), but the range from 0.66 (Trump) to 0.87 (Jackman) reveals uneven discrimination quality. The random-baseline diagonal is plotted for reference. The macro-average ROC curve tracks closest to the per-class average, as expected.
+
+**Notable ROC observations:**
+
+1. Hugh Jackman's ROC curve hugs the upper-left corner most tightly, consistent with his high recall and best ROC-AUC.
+2. Donald Trump's ROC curve is the shallowest, remaining closer to the diagonal, confirming poor identity separation in the embedding space.
+3. The "None" class achieves a surprisingly high ROC-AUC (0.7885) despite its low precision, because the score construction (1 − max similarity) provides reasonable discrimination between "no match" and "good match" scenarios; the issue is that many true-identity images also get low similarity scores (detection failures), contaminating the "None" score distribution.
+
+### 8.6 Per-Class Heatmaps
+
+The per-class metrics heatmap is a four-panel visualisation saved to `eval_hog_20260215_130214/per_class_metrics_heatmap.png`. Each panel shows one metric (Precision, Recall, F-beta, ROC-AUC) for all five classes in a single horizontal row, coloured with the `YlOrRd` sequential colour map (yellow = low, red = high).
+
+**Visual patterns in the heatmap:**
+
+- **Precision panel:** A clear gradient from Lionel Messi (0.677, warmest) to None (0.289, coolest). The heatmap immediately reveals that precision is the system's weakest dimension, with no class exceeding 0.68.
+- **Recall panel:** Hugh Jackman stands out at 0.819 (warmest), while the remaining classes cluster between 0.53 and 0.65. This panel shows the system is more capable at recall than precision.
+- **F-beta panel:** Reflects the precision weighting (β=0.4). Messi leads (0.673), Jackman follows (0.580), and "None" trails at 0.308.
+- **ROC-AUC panel:** The most uniformly warm panel — all values exceed 0.66. Jackman's 0.873 dominates, with "None" surprisingly strong at 0.789, indicating that the score-based ranking quality is better than the hard-threshold classification quality.
+
+### 8.7 Summary Report
+
+The final summary report printed by the notebook consolidates all results:
+
+```
+==========================================================================================
+HOG (face_recognition) EVALUATION — SUMMARY REPORT
+==========================================================================================
+
+Configuration:
+  Test Set:                        1536 images
+  Face Identification Threshold:   0.3
+  F-beta Parameter:                0.4
+  Fixed Recall Level:              0.95
+  Fixed Precision Level:           0.95
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  OVERALL METRICS
+──────────────────────────────────────────────────────────────────────────────────────────
+  Subset Accuracy                          0.4616
+  F-beta (macro, β=0.4)                    0.5197
+  F-beta (micro, β=0.4)                    0.5176
+  Precision (macro)                        0.5059
+  Precision (micro)                        0.5007
+  Recall (macro)                           0.6508
+  Recall (micro)                           0.6554
+  P@R=0.95 (macro)                         0.2428
+  P@R=0.95 (micro)                         0.2097
+  R@P=0.95 (macro)                         0.4774
+  R@P=0.95 (micro)                         0.0000
+  Identification Rate                      1.0000
+
+──────────────────────────────────────────────────────────────────────────────────────────
+  PER-CLASS F-BETA SCORES
+──────────────────────────────────────────────────────────────────────────────────────────
+  Donald Trump                   0.4804
+  Giorgia Meloni                 0.5567
+  Hugh Jackman                   0.5804
+  Lionel Messi                   0.6728
+  None                           0.3083
+
+All results saved to: /app/image_outputs/eval_hog_20260215_130214
+==========================================================================================
+```
+
+All artefacts (heatmap, PR/ROC curves) were saved to the timestamped experiment directory `/app/image_outputs/eval_hog_20260215_130214/`.
 
 ---
 
@@ -372,28 +533,69 @@ A four-panel horizontal heatmap visualises per-class precision, recall, F-beta, 
 
 ### 9.1 Strengths of the HOG Pipeline
 
-1. **Speed** — HOG is an order of magnitude faster than CNN-based detectors on CPU hardware. For real-time applications on edge devices or budget servers, this matters.
+1. **Speed** — The evaluation processed 1,536 images in approximately 10 minutes 53 seconds (2.35 images/second) on a single CPU thread inside a Docker container. HOG is an order of magnitude faster than CNN-based detectors on CPU hardware.
 2. **No GPU required** — the entire pipeline (detection, embedding, matching) runs on CPU, unlike InsightFace or ViT models that benefit significantly from GPU acceleration.
 3. **Small memory footprint** — the dlib models are compact compared to ONNX-based InsightFace models (159–407 MB) or CLIP transformers.
 4. **Simplicity** — fewer moving parts, fewer dependency issues, easier to debug and deploy.
+5. **Hugh Jackman detection** — the system demonstrated genuinely strong performance for well-lit, frontal-face scenarios. Hugh Jackman's recall of 0.8191 and ROC-AUC of 0.8730 show that the HOG pipeline *can* work well when conditions are favourable. His R@P=0.95 of 0.7993 means that for this identity, a high-precision operating point is feasible.
 
 ### 9.2 Limitations and Failure Modes
 
-1. **Limited pose invariance** — HOG detectors are trained primarily on frontal faces and struggle with profile views beyond approximately 30° from frontal. This leads to detection failures (no face found) rather than misidentification.
-2. **Small face sensitivity** — without aggressive upsampling, faces occupying a small portion of the image may go undetected. The default upsampling in the `UnifiedClassifier` is 1, which is relatively conservative.
-3. **Lower-dimensional embeddings** — at 128 dimensions, the dlib face descriptor has less representational capacity than InsightFace's 512-dimensional or ViT's 768-dimensional embeddings. This may lead to confusion between visually similar identities.
-4. **Cosine similarity calibration** — the `face_recognition` embeddings were originally designed for Euclidean distance comparison. While cosine similarity works, the threshold calibration (0.30) is different from what would be used with Euclidean distance (typically ~0.6), and may not be optimal. The threshold was chosen for cross-model consistency rather than per-model optimisation.
-5. **Single reference image** — using only one reference image per identity is a challenging setting. Any model will suffer from reference bias; if the reference image shows a person at a specific age, hairstyle, or lighting condition, test images that deviate significantly will score lower.
+The experimental results reveal several concrete failure modes:
 
-### 9.3 Comparison Context with Other Models
+1. **Catastrophic detection failure rate (27%).** The HOG detector failed to find any face in 415 of 1,536 images. This single weakness drives much of the system's poor performance. Every missed detection contributes a false negative for the true identity and a potential false positive for "None". With more aggressive upsampling (setting `detection_upsample=2` or `enable_multi_pass=True`), some of these failures could be recovered — at the cost of latency.
+
+2. **Zero unknown faces — no rejection capability.** With the threshold set at 0.30, every detected face was matched to some identity. The system has no ability to say "I see a face but don't know who this is." This is dangerous in production: any bystander, journalist, or security guard whose face is detected will be labelled as one of the four target identities. Raising the threshold would mitigate this, but given the generally low cosine similarity scores produced by 128-dimensional dlib embeddings, finding the right threshold without destroying recall is challenging.
+
+3. **~50% precision — effectively a coin flip.** Macro precision of 0.5059 means that, on average, half of the identity labels the system produces are wrong. In a press-agency context, this means half of all auto-tagged photos would carry incorrect celebrity labels — an unacceptable error rate that would require 100% human review.
+
+4. **Donald Trump confusion.** Trump's precision of 0.4644 (248 FP vs 215 TP) suggests his dlib embedding overlaps significantly with other identities in the 128-dimensional space. This may reflect visual similarity with other middle-aged male subjects or the broad diversity of Trump's press photographs (indoor/outdoor, formal/casual, varied lighting).
+
+5. **"None" class contamination.** The "None" class is the worst performer (F-beta = 0.3083) primarily because detection failures funnel images into this category. Of the 415 images where no face was found, many likely contained target identities that the HOG detector simply missed. This creates a systematic bias: the "None" class accumulates errors from two independent sources — genuine "None" images that are correctly classified, and identity images where detection failed.
+
+6. **Lower-dimensional embeddings** — at 128 dimensions, the dlib face descriptor has less representational capacity than InsightFace's 512-dimensional or ViT's 768-dimensional embeddings. The confusion patterns (especially Trump's high FP rate) suggest the embedding space conflates distinct identities.
+
+7. **Cosine similarity calibration** — the `face_recognition` embeddings were originally designed for Euclidean distance comparison. The threshold of 0.30 was chosen for cross-model consistency rather than per-model optimisation, which may explain the 100% identification rate (the threshold is too permissive for this embedding space).
+
+### 9.3 Failure Root-Cause Decomposition
+
+The system's errors can be decomposed into two categories:
+
+| Error Source | Mechanism | Impact on Metrics |
+|--------------|-----------|-------------------|
+| **Detection failures** | HOG cannot find face → image defaults to "None" | Inflates FN for true identity, inflates FP for "None" |
+| **Identification errors** | Face detected but cosine similarity assigns wrong identity | Inflates FP for wrong identity, inflates FN for correct identity |
+
+Given that 415 images had no face detected (27%), and assuming ~70% of those images actually contained a target identity (i.e., ~290 images), detection failures alone account for roughly 290 of the 552 total false negatives (53%). The remaining ~262 false negatives stem from identification errors — faces that were detected but attributed to the wrong identity. This decomposition suggests that **improving the face detector would yield more benefit than improving the embedding model** for the HOG pipeline.
+
+### 9.4 Threshold Sensitivity Analysis
+
+The experiment used a fixed threshold of 0.30. The P@R and R@P metrics at the 0.95 operating points reveal the threshold sensitivity:
+
+- **Raising the threshold** (e.g., to 0.50) would introduce face rejections (unknown faces), potentially improving precision by refusing low-confidence matches. However, given that scores are compressed in the 128-dim embedding space, a higher threshold could also reject correct matches.
+- **Lowering the threshold** (e.g., to 0.20) would have minimal effect since virtually all faces already exceed 0.30. It would maintain the 100% identification rate without improving discrimination.
+
+The R@P=0.95 macro of 0.4774 indicates that, across all classes in aggregate, a high-precision operating point is achievable for ~48% of true positives. However, R@P=0.95 micro = 0.0000 means there is no *global* threshold that achieves 95% precision across all sample-class pairs simultaneously — the model simply cannot reach this performance level.
+
+### 9.5 Comparison Context with Other Models
 
 This experiment is designed to sit alongside evaluations of:
 
-- **CNN (`Experiment_legacy_CNN.ipynb`)** — uses the `face_recognition` CNN detector instead of HOG. The CNN detector is more robust to pose and scale variations but significantly slower.
-- **InsightFace (`Experiment_insightface_only.ipynb`)** — uses SCRFD detection and ArcFace 512-dimensional embeddings. Expected to outperform both legacy models significantly.
+- **CNN (`Experiment_legacy_CNN.ipynb`)** — uses the `face_recognition` CNN (MMOD) detector instead of HOG. The CNN detector is more robust to pose and scale variations but significantly slower. The same 128-dim dlib embeddings are used, so identification accuracy should be similar for correctly detected faces, but the CNN's superior detection should reduce the 27% no-face rate substantially.
+- **InsightFace (`Experiment_insightface_only.ipynb`)** — uses SCRFD detection and ArcFace 512-dimensional embeddings. Expected to outperform both legacy models significantly due to better detection and higher-dimensional embeddings.
 - **ViT (`Experiment_legacy_ViT.ipynb`)** — uses CLIP Vision Transformer embeddings (768-dim). Strong at generalised visual matching but may lag in face-specific tasks without fine-tuning.
 
 The shared metric schema ensures results from all four notebooks can be directly compared in a summary table or radar chart. The consistent use of cosine similarity, identical F-beta parameter (0.4), identical threshold for the primary result (0.30), and identical P@R/R@P levels (0.95) eliminates confounding variables and isolates model-architecture differences.
+
+**Expected ranking hypothesis** (to be confirmed with companion notebook results):
+
+| Metric | Expected Ranking (best → worst) |
+|--------|--------------------------------|
+| Subset Accuracy | InsightFace > CNN > ViT > HOG |
+| Precision | InsightFace > CNN ≈ ViT > HOG |
+| Recall | InsightFace > CNN > HOG > ViT |
+| ROC-AUC | InsightFace > CNN > ViT > HOG |
+| Speed (CPU) | HOG > CNN > ViT > InsightFace |
 
 ---
 
@@ -407,6 +609,12 @@ Each run of the notebook creates a unique directory under `image_outputs/` with 
 eval_hog_YYYYMMDD_HHMMSS/
 ```
 
+For this evaluation run, the output directory was:
+
+```
+/app/image_outputs/eval_hog_20260215_130214/
+```
+
 This directory contains:
 
 | File | Description |
@@ -414,7 +622,18 @@ This directory contains:
 | `per_class_metrics_heatmap.png` | Four-panel heatmap of precision, recall, F-beta, ROC-AUC per class |
 | `pr_roc_curves.png` | Combined PR and ROC curve plots with macro-average and per-class curves |
 
-### 10.2 Determinism
+### 10.2 Runtime Performance
+
+The evaluation run completed with the following performance characteristics:
+
+| Metric | Value |
+|--------|-------|
+| Total images processed | 1,536 |
+| Processing speed | 2.35 images/second |
+| Total evaluation time | ~10 minutes 53 seconds |
+| Environment | Docker container (Ubuntu 24.04 LTS), CPU only |
+
+### 10.3 Determinism
 
 The evaluation is deterministic in the following sense:
 
@@ -424,7 +643,7 @@ The evaluation is deterministic in the following sense:
 
 Therefore, re-running the notebook on the same dataset with the same parameters will produce identical numerical results. The only non-determinism is in the timestamp of the output directory.
 
-### 10.3 Data Dependencies
+### 10.4 Data Dependencies
 
 The notebook depends on the following external data files:
 
@@ -439,7 +658,41 @@ All paths are relative to the project root (`/app`), and the notebook explicitly
 
 ## 11. Conclusions
 
-The `Experiment_legacy_HOG.ipynb` notebook implements a rigorous, multi-faceted evaluation of the HOG-based face recognition pipeline. By using the same dataset, metric suite, and evaluation methodology as the InsightFace baseline, it enables meaningful cross-model comparison. The experiment's design reflects several best practices:
+### 11.1 Summary of Findings
+
+The `Experiment_legacy_HOG.ipynb` notebook executed a rigorous, multi-faceted evaluation of the HOG-based face recognition pipeline against 1,536 images. The results paint a clear picture of a lightweight model operating at the boundaries of acceptable performance:
+
+| Key Finding | Evidence |
+|-------------|----------|
+| **Below-50% exact-match accuracy** | Subset accuracy = 0.4616 — the system gets the complete label set wrong more often than right |
+| **Coin-flip precision** | Macro precision = 0.5059 — half of all identity labels are incorrect |
+| **Reasonable recall** | Macro recall = 0.6508 — the system finds about two-thirds of true positives |
+| **Detection is the bottleneck** | 27% no-face rate (415/1,536 images); detection failures alone account for ~53% of all false negatives |
+| **No rejection capability** | 100% identification rate at threshold 0.30 — the system never says "unknown" |
+| **Uneven per-class quality** | F-beta ranges from 0.3083 (None) to 0.6728 (Messi) — a 2.2× spread |
+| **Cannot achieve high precision globally** | R@P=0.95 micro = 0.0000 — no operating point delivers 95% micro-precision |
+
+### 11.2 Practical Implications
+
+For a press-agency deployment scenario:
+
+1. **Not suitable as a standalone system.** With ~50% precision, every second auto-tag would be wrong. Full human review would still be required, negating much of the automation benefit.
+2. **Viable as a pre-filter.** With 65% recall and fast processing (2.35 img/s on CPU), the HOG pipeline could serve as a rapid first pass to flag *candidate* images for a more accurate (but slower) model like InsightFace or CNN. Images where HOG detects a face and assigns a high-confidence match could be prioritised for review.
+3. **Per-identity reliability varies.** Hugh Jackman (F-beta=0.5804, R@P=0.95=0.7993) is reliably identified; Donald Trump (F-beta=0.4804, R@P=0.95=0.4245) is not. Deployment decisions should consider which identities are in the gallery and whether they match the profile of "HOG-friendly" subjects (frontal, well-lit, distinctive features).
+
+### 11.3 Recommendations for Improvement
+
+Based on the experimental evidence, the following improvements are recommended in priority order:
+
+1. **Switch to CNN detection** (highest impact) — the CNN (MMOD) detector should recover a substantial portion of the 415 no-face images. This alone could lift subset accuracy by 10–15 percentage points, at the cost of ~5× slower inference.
+2. **Enable multi-pass detection** — setting `enable_multi_pass=True` and increasing `detection_upsample` would recover small and profile faces currently missed by HOG, reducing the no-face rate without changing the detector architecture.
+3. **Raise the identification threshold** — increasing from 0.30 to 0.40–0.45 would introduce rejection capability, preventing low-confidence matches from producing false positives. This trades some recall for improved precision.
+4. **Augment the reference gallery** — adding 3–5 diverse reference images per identity (different angles, lighting, expressions) would improve embedding coverage and reduce reference bias.
+5. **Consider Euclidean distance** — since dlib embeddings were designed for Euclidean distance matching, switching from cosine similarity to Euclidean distance (with an appropriately calibrated threshold) may improve separation between identities.
+
+### 11.4 Design and Methodological Strengths
+
+The experiment's design reflects several best practices that enable meaningful cross-model comparison:
 
 1. **Modular architecture** — leveraging the project's pluggable components means the evaluation code is not HOG-specific; only configuration parameters change.
 2. **Multi-label awareness** — the evaluation correctly handles images containing multiple identities, avoiding the oversimplification of treating face recognition as single-label classification.
@@ -447,7 +700,9 @@ The `Experiment_legacy_HOG.ipynb` notebook implements a rigorous, multi-faceted 
 4. **Visual reporting** — heatmaps and curve plots provide intuitive summaries alongside numeric tables.
 5. **Reproducibility** — timestamped outputs, deterministic processing, and explicit parameter documentation support experiment tracking.
 
-The HOG pipeline represents the performance floor of the ImageEngine system. Its results inform decisions about when CPU-only deployment is acceptable, when more powerful models are needed, and what combination of detection and embedding models offers the best accuracy–latency trade-off for specific applications.
+### 11.5 Final Assessment
+
+The HOG pipeline represents the **performance floor** of the ImageEngine system. Its results — subset accuracy of 46.2%, macro F-beta of 0.52, and an inability to reach 95% micro-precision at any recall level — establish clear quantitative bounds for the simplest model in the system. These bounds serve as the baseline against which CNN, InsightFace, and ViT models will be compared in companion evaluation notebooks, with the expectation that each subsequent model will demonstrate measurable improvements in exchange for additional computational cost.
 
 ---
 

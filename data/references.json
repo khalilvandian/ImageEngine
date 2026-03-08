@@ -14,5 +14,17 @@
     {
         "name": "Lionel Messi",
         "reference_images": [{"image_path": "Images/references/LionnelMessi.png"}]
+    },
+    {
+        "name": "Javier Bardem",
+        "reference_images": [{"image_path": "Images/references/JavierBardem.jpg"}]
+    },
+    {
+        "name": "Jeffrey Dean Morgan",
+        "reference_images": [{"image_path": "Images/references/JeffreyDeanMorgan.jpg"}]
+    },
+    {
+        "name": "Samantha Cristoforetti",
+        "reference_images": [{"image_path": "Images/references/SamanthaCristoforetti.jpg"}]
     }
 ]
