@@ -38,7 +38,7 @@ This report presents a comprehensive evaluation of the InsightFace deep face rec
 
 The experiment was conducted on a dataset of 1,080 test images (465 of Javier Bardem and 615 of Jeffrey Dean Morgan) using a single reference embedding per person extracted from the InsightFace `buffalo_l` model. The classification decision was made purely on the basis of maximum cosine similarity — each test image was assigned the label of whichever reference embedding yielded the highest cosine similarity score, with no threshold and no "unknown" class.
 
-The results are outstanding. The model achieved an overall accuracy of **98.61%** (1,065 out of 1,080 images correctly classified), a balanced accuracy of **98.73%**, a macro-averaged F1 score of **0.9859**, a Cohen's Kappa of **0.9718**, a Matthews Correlation Coefficient (MCC) of **0.9720**, and a ROC AUC of **0.9997**. Only 15 images were misclassified out of the entire test set, and 2 images had no detectable face. These results strongly demonstrate that InsightFace's deep embedding space captures identity-discriminative features that go well beyond superficial facial similarity, enabling near-perfect separation of two individuals that the human eye often confuses.
+The results are outstanding. Under the requested macro-aggregated evaluation, the model achieved **Accuracy = 0.9861**, **Precision = 0.9847**, **Recall = 0.9873**, **F0.4 = 0.9850**, **ROC AUC = 0.9997**, and **R@P=0.95 = 0.9989**. Only 15 images were misclassified out of the entire test set, and 2 images had no detectable face. These results strongly demonstrate that InsightFace's deep embedding space captures identity-discriminative features that go well beyond superficial facial similarity, enabling near-perfect separation of two individuals that the human eye often confuses.
 
 ---
 
@@ -112,7 +112,7 @@ The evaluation follows a standard classification evaluation protocol:
    c. Compute cosine similarity between each detected face and each reference embedding
    d. Select the identity with the highest similarity across all detected faces
    e. Record the prediction, similarity scores, and decision margin
-5. **Compute metrics**: Accuracy, balanced accuracy, precision, recall, F1, Cohen's Kappa, MCC, ROC AUC, Average Precision, and confusion matrix
+5. **Compute metrics**: macro-aggregated accuracy, precision, recall, F0.4, ROC AUC, R@P=0.95, per-class one-vs-rest metrics, Average Precision, and confusion matrix
 
 ### 4.3 Software and Hardware
 
@@ -258,38 +258,28 @@ This represents the model's "confidence" in its decision. A large margin indicat
 
 ### 9.1 Overall Classification Metrics
 
-The model achieved the following overall performance on the 1,080-image test set:
+The model achieved the following requested macro-aggregated performance on the 1,080-image test set. Accuracy is macro-averaged over the one-vs-rest class accuracies, and ROC-based metrics use the continuous score differences rather than hard predicted labels:
 
 | Metric | Value |
 |---|---|
-| **Accuracy** | 0.9861 (98.61%) |
-| **Balanced Accuracy** | 0.9873 (98.73%) |
+| **Accuracy (macro)** | 0.9861 (98.61%) |
 | **Precision (macro)** | 0.9847 |
 | **Recall (macro)** | 0.9873 |
-| **F1 Score (macro)** | 0.9859 |
-| **Precision (weighted)** | 0.9864 |
-| **Recall (weighted)** | 0.9861 |
-| **F1 Score (weighted)** | 0.9861 |
-| **Cohen's Kappa** | 0.9718 |
-| **Matthews Correlation Coefficient** | 0.9720 |
-| **ROC AUC** | 0.9997 |
-| **Average Precision** | 0.9996 |
+| **F0.4 (macro)** | 0.9850 |
+| **ROC AUC (macro)** | 0.9997 |
+| **R@P=0.95 (macro)** | 0.9989 |
 
 ### 9.2 Interpretation of Key Metrics
 
 **Accuracy (98.61%)**: Out of 1,080 test images, 1,065 were classified correctly. Only 15 images were misclassified. This is an exceptional result given the extreme visual similarity between the two subjects.
 
-**Balanced Accuracy (98.73%)**: This metric accounts for class imbalance by averaging the recall of each class. The fact that it is slightly higher than raw accuracy indicates that the model performs marginally better on the minority class (Javier Bardem), confirming that the class imbalance does not adversely affect performance.
+**Recall (macro: 0.9873)**: Averaging recall across the two one-vs-rest class views shows that the class imbalance does not materially degrade performance.
 
-**F1 Score (macro: 0.9859)**: The harmonic mean of precision and recall, averaged across classes, confirms that the model achieves simultaneously high precision and high recall for both identities. There is no significant trade-off between the two.
+**Precision (macro: 0.9847)** and **F0.4 (macro: 0.9850)**: The model retains high positive predictive value while also performing strongly under a precision-leaning $F_{0.4}$ objective.
 
-**Cohen's Kappa (0.9718)**: This measures agreement beyond what would be expected by chance. A value above 0.80 is generally considered "almost perfect agreement." At 0.9718, the model demonstrates near-perfect reliability that far exceeds random chance.
+**R@P=0.95 (macro: 0.9989)**: At a precision requirement of 95%, the model still recovers essentially the entire dataset, confirming that most borderline cases remain highly separable.
 
-**Matthews Correlation Coefficient (0.9720)**: MCC is considered one of the most balanced measures of binary classification quality, as it takes into account all four cells of the confusion matrix. A value of +1 indicates perfect prediction, 0 indicates no better than random, and -1 indicates total disagreement. At 0.9720, the model is performing at an exceptionally high level.
-
-**ROC AUC (0.9997)**: The area under the Receiver Operating Characteristic curve measures the model's ability to discriminate between the two classes across all possible thresholds. A value of 0.9997 (out of a maximum of 1.0000) indicates near-perfect discriminative ability. This means that a randomly chosen Javier Bardem image will have a higher "Bardem score" than a randomly chosen Jeffrey Dean Morgan image 99.97% of the time.
-
-**Average Precision (0.9996)**: Similar to ROC AUC but more sensitive to performance in high-precision regimes, the Average Precision of 0.9996 confirms that the model maintains near-perfect precision even at very high recall levels.
+**ROC AUC (macro: 0.9997)**: The area under the Receiver Operating Characteristic curve was computed one-vs-rest from the continuous class score differences. A value of 0.9997 indicates near-perfect discriminative ability.
 
 ### 9.3 Processing Statistics
 
@@ -525,26 +515,27 @@ It is also noteworthy that the accuracy plateau extends into negative threshold 
 
 | Metric | Javier Bardem | Jeffrey Dean Morgan |
 |---|---|---|
-| **True Positives (TP)** | 463 | 602 |
-| **False Positives (FP)** | 13 | 2 |
-| **False Negatives (FN)** | 2 | 13 |
-| **True Negatives (TN)** | 602 | 463 |
+| **Accuracy** | 0.9861 | 0.9861 |
 | **Precision** | 0.9727 | 0.9967 |
 | **Recall** | 0.9957 | 0.9789 |
-| **F1 Score** | 0.9841 | 0.9877 |
+| **F0.4** | 0.9758 | 0.9942 |
+| **ROC AUC** | 0.9997 | 0.9997 |
+| **R@P=0.95** | 0.9978 | 1.0000 |
 | **Support** | 465 | 615 |
 
 ### 17.2 Class-Level Interpretation
 
 **Javier Bardem**:
+- **Accuracy (0.9861)**: The one-vs-rest Bardem classifier is correct on 98.61% of all images.
 - **Precision (0.9727)**: Of all images predicted as Bardem, 97.27% were actually Bardem. The 13 false positives are Morgan images misclassified as Bardem.
 - **Recall (0.9957)**: Of all actual Bardem images, 99.57% were correctly identified. Only 2 Bardem images were missed.
-- **F1 (0.9841)**: Excellent harmonic mean of precision and recall.
+- **F0.4 (0.9758), ROC AUC (0.9997), and R@P=0.95 (0.9978)**: Bardem remains extremely separable even under a high-precision operating constraint.
 
 **Jeffrey Dean Morgan**:
+- **Accuracy (0.9861)**: The one-vs-rest Morgan classifier is also correct on 98.61% of all images.
 - **Precision (0.9967)**: Of all images predicted as Morgan, 99.67% were actually Morgan. Only 2 false positives (Bardem images misclassified as Morgan).
 - **Recall (0.9789)**: Of all actual Morgan images, 97.89% were correctly identified. 13 Morgan images were missed.
-- **F1 (0.9877)**: Slightly higher F1 than Bardem due to the exceptional precision.
+- **F0.4 (0.9942), ROC AUC (0.9997), and R@P=0.95 (1.0000)**: Morgan is likewise almost perfectly separable, and at 95% precision the full Morgan set remains recoverable.
 
 ### 17.3 Asymmetry Analysis
 

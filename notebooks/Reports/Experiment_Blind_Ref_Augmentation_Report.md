@@ -42,8 +42,8 @@ The experiment was conducted on a training set of 1,536 images containing four k
 
 **Key Findings:**
 
-- **Baseline performance** (no augmentation): Accuracy = 0.8516, F-β(0.4) = 0.8838, MCC = 0.8402, Cohen's κ = 0.8184
-- **Best configuration**: threshold = 0.4, sample size = 300, achieving F-β(0.4) = 0.9076 (+0.0238), Accuracy = 0.8984 (+0.0469), MCC = 0.8817 (+0.0415), κ = 0.8755 (+0.0571)
+- **Baseline performance** (no augmentation): Subset Accuracy = 0.8516, Accuracy (macro) = 0.9417, F-β(0.4) = 0.8838, Precision = 0.8962, Recall = 0.8646, ROC-AUC = 0.9398, R@P=0.95 = 0.7136, MCC = 0.8402, Cohen's κ = 0.8184
+- **Best configuration**: threshold = 0.4, sample size = 300, achieving F-β(0.4) = 0.9075 (+0.0238), Subset Accuracy = 0.8984 (+0.0469), Accuracy (macro) = 0.9598 (+0.0181), Precision = 0.9127 (+0.0165), Recall = 0.9050 (+0.0405), ROC-AUC = 0.9343 (−0.0055), R@P=0.95 = 0.7253 (+0.0117), MCC = 0.8817 (+0.0415), κ = 0.8754 (+0.0571)
 - **Moderate thresholds (0.25–0.6) consistently improve** performance across all sample sizes
 - **Very low threshold (0.1) catastrophically degrades** performance by flooding the reference database with noisy, often incorrect embeddings
 - **Very high thresholds (0.8, 1.0) have virtually no effect** because almost no faces meet the stringent similarity requirement
@@ -86,6 +86,7 @@ With only a single reference image per identity (as in this experiment's baselin
 This experiment employs an extensive suite of evaluation metrics:
 
 - **Subset Accuracy**: The fraction of images where the predicted label set exactly matches the ground-truth label set (strict multi-label accuracy).
+- **Accuracy (macro)**: The macro-averaged per-class binary accuracy, computed as the mean of (TP+TN)/(TP+TN+FP+FN) across all classes in a one-vs-rest formulation. Unlike Subset Accuracy, this treats each class independently and is less sensitive to multi-label edge cases.
 - **F-beta Score (β=0.4)**: A weighted harmonic mean of precision and recall, with β < 1 emphasizing precision over recall. At β=0.4, precision is weighted approximately 6.25× more than recall, reflecting a deployment scenario where false identifications are more costly than missed identifications.
 - **Precision (macro)**: The macro-averaged fraction of correct positive predictions across all classes.
 - **Recall (macro)**: The macro-averaged fraction of actual positives correctly identified across all classes.
@@ -330,6 +331,66 @@ The complete results across all 49 configurations are summarized below. The crit
 | **0.80** | 0.840 | 0.840 | 0.840 | 0.840 | 0.840 | 0.840 | 0.841 |
 | **1.00** | 0.840 | 0.840 | 0.840 | 0.840 | 0.840 | 0.840 | 0.840 |
 
+#### Accuracy (macro)
+
+| Threshold | n=0 | n=10 | n=30 | n=50 | n=100 | n=200 | n=300 |
+|-----------|-----|------|------|------|-------|-------|-------|
+| **0.10** | 0.942 | 0.925 | 0.897 | 0.890 | 0.881 | 0.858 | 0.850 |
+| **0.25** | 0.942 | 0.948 | 0.952 | 0.954 | 0.956 | 0.954 | 0.944 |
+| **0.30** | 0.942 | 0.948 | 0.952 | 0.954 | 0.957 | 0.954 | 0.955 |
+| **0.40** | 0.942 | 0.948 | 0.952 | 0.954 | 0.957 | 0.959 | 0.960 |
+| **0.60** | 0.942 | 0.943 | 0.948 | 0.951 | 0.953 | 0.956 | 0.957 |
+| **0.80** | 0.942 | 0.942 | 0.942 | 0.942 | 0.942 | 0.942 | 0.942 |
+| **1.00** | 0.942 | 0.942 | 0.942 | 0.942 | 0.942 | 0.942 | 0.942 |
+
+#### Precision (macro)
+
+| Threshold | n=0 | n=10 | n=30 | n=50 | n=100 | n=200 | n=300 |
+|-----------|-----|------|------|------|-------|-------|-------|
+| **0.10** | 0.896 | 0.818 | 0.755 | 0.738 | 0.719 | 0.663 | 0.645 |
+| **0.25** | 0.896 | 0.902 | 0.906 | 0.909 | 0.909 | 0.892 | 0.856 |
+| **0.30** | 0.896 | 0.902 | 0.906 | 0.908 | 0.911 | 0.893 | 0.893 |
+| **0.40** | 0.896 | 0.902 | 0.906 | 0.908 | 0.911 | 0.911 | 0.913 |
+| **0.60** | 0.896 | 0.898 | 0.903 | 0.905 | 0.907 | 0.910 | 0.911 |
+| **0.80** | 0.896 | 0.896 | 0.896 | 0.896 | 0.896 | 0.896 | 0.897 |
+| **1.00** | 0.896 | 0.896 | 0.896 | 0.896 | 0.896 | 0.896 | 0.896 |
+
+#### Recall (macro)
+
+| Threshold | n=0 | n=10 | n=30 | n=50 | n=100 | n=200 | n=300 |
+|-----------|-----|------|------|------|-------|-------|-------|
+| **0.10** | 0.865 | 0.858 | 0.825 | 0.818 | 0.814 | 0.812 | 0.808 |
+| **0.25** | 0.865 | 0.880 | 0.888 | 0.894 | 0.898 | 0.895 | 0.886 |
+| **0.30** | 0.865 | 0.880 | 0.888 | 0.893 | 0.898 | 0.896 | 0.898 |
+| **0.40** | 0.865 | 0.879 | 0.887 | 0.893 | 0.898 | 0.903 | 0.905 |
+| **0.60** | 0.865 | 0.869 | 0.880 | 0.886 | 0.891 | 0.897 | 0.899 |
+| **0.80** | 0.865 | 0.865 | 0.865 | 0.865 | 0.865 | 0.865 | 0.866 |
+| **1.00** | 0.865 | 0.865 | 0.865 | 0.865 | 0.865 | 0.865 | 0.865 |
+
+#### ROC-AUC (macro)
+
+| Threshold | n=0 | n=10 | n=30 | n=50 | n=100 | n=200 | n=300 |
+|-----------|-----|------|------|------|-------|-------|-------|
+| **0.10** | 0.940 | 0.919 | 0.896 | 0.882 | 0.874 | 0.853 | 0.841 |
+| **0.25** | 0.940 | 0.939 | 0.936 | 0.934 | 0.934 | 0.930 | 0.927 |
+| **0.30** | 0.940 | 0.939 | 0.936 | 0.935 | 0.934 | 0.930 | 0.929 |
+| **0.40** | 0.940 | 0.939 | 0.936 | 0.935 | 0.934 | 0.934 | 0.934 |
+| **0.60** | 0.940 | 0.940 | 0.937 | 0.935 | 0.934 | 0.935 | 0.936 |
+| **0.80** | 0.940 | 0.940 | 0.940 | 0.940 | 0.940 | 0.940 | 0.937 |
+| **1.00** | 0.940 | 0.940 | 0.940 | 0.940 | 0.940 | 0.940 | 0.940 |
+
+#### R@P=0.95 (macro)
+
+| Threshold | n=0 | n=10 | n=30 | n=50 | n=100 | n=200 | n=300 |
+|-----------|-----|------|------|------|-------|-------|-------|
+| **0.10** | 0.714 | 0.476 | 0.335 | 0.332 | 0.176 | 0.001 | 0.001 |
+| **0.25** | 0.714 | 0.719 | 0.724 | 0.724 | 0.724 | 0.696 | 0.532 |
+| **0.30** | 0.714 | 0.719 | 0.724 | 0.724 | 0.722 | 0.697 | 0.687 |
+| **0.40** | 0.714 | 0.720 | 0.724 | 0.724 | 0.722 | 0.725 | 0.725 |
+| **0.60** | 0.714 | 0.716 | 0.721 | 0.721 | 0.722 | 0.725 | 0.728 |
+| **0.80** | 0.714 | 0.714 | 0.714 | 0.714 | 0.714 | 0.714 | 0.715 |
+| **1.00** | 0.714 | 0.714 | 0.714 | 0.714 | 0.714 | 0.714 | 0.714 |
+
 ### 9.2 Best Performing Configurations
 
 The experiment identified the following optimal configurations for each metric:
@@ -337,13 +398,15 @@ The experiment identified the following optimal configurations for each metric:
 | Metric | Best Value | Δ vs Baseline | Threshold | Sample Size |
 |--------|-----------|---------------|-----------|-------------|
 | **Subset Accuracy** | 0.8984 | +0.0469 | 0.4 | 300 |
-| **F-β (macro)** | 0.9076 | +0.0238 | 0.4 | 300 |
-| **Precision (macro)** | 0.9131 | +0.0168 | 0.4 | 300 |
-| **Recall (macro)** | 0.9051 | +0.0405 | 0.4 | 300 |
+| **Accuracy (macro)** | 0.9598 | +0.0181 | 0.4 | 300 |
+| **F-β (macro)** | 0.9075 | +0.0238 | 0.4 | 300 |
+| **Precision (macro)** | 0.9127 | +0.0165 | 0.4 | 300 |
+| **Recall (macro)** | 0.9050 | +0.0405 | 0.4 | 300 |
 | **MCC (macro)** | 0.8817 | +0.0415 | 0.4 | 300 |
-| **Cohen's Kappa** | 0.8755 | +0.0571 | 0.4 | 300 |
-| **PR-AUC (macro)** | 0.8724 | +0.0070 | 0.6 | 300 |
-| **ROC-AUC (macro)** | 0.9399 | ≈ 0 | Multiple |
+| **Cohen's Kappa** | 0.8754 | +0.0571 | 0.4 | 300 |
+| **PR-AUC (macro)** | 0.8722 | +0.0071 | 0.6 | 300 |
+| **ROC-AUC (macro)** | 0.9398 | ≈ 0 | Multiple (n=0) |
+| **R@P=0.95 (macro)** | 0.7275 | +0.0139 | 0.6 | 300 |
 
 Strikingly, the threshold of 0.4 with the maximum sample size of 300 dominates across nearly all core metrics. This configuration represents a balance between being sufficiently permissive to add meaningful augmentation (238 faces added — a 60× expansion) while being selective enough to avoid significant contamination.
 
@@ -354,13 +417,15 @@ The baseline (no augmentation, sample_size = 0) serves as the reference for all 
 | Metric | Baseline Value |
 |--------|---------------|
 | Subset Accuracy | 0.8516 |
+| Accuracy (macro) | 0.9417 |
 | F-β (macro, β=0.4) | 0.8838 |
 | Precision (macro) | 0.8962 |
 | Recall (macro) | 0.8646 |
 | MCC (macro) | 0.8402 |
 | Cohen's Kappa | 0.8184 |
 | PR-AUC (macro) | 0.8651 |
-| ROC-AUC (macro) | 0.9397 |
+| ROC-AUC (macro) | 0.9398 |
+| R@P=0.95 (macro) | 0.7136 |
 
 The baseline is already reasonably strong, with accuracy above 85% and F-β above 88%, indicating that the single-reference-per-identity setup provides a solid foundation. However, there is clearly room for improvement, particularly in recall (86.46%) and Cohen's Kappa (0.8184).
 
@@ -463,19 +528,61 @@ The per-class heatmaps reveal how augmentation affects individual identities dif
 - **The "None" class benefits the most from augmentation** — its F-β improves from baseline 0.547 (at t=0.8/1.0) to 0.708 at t=0.4
 - This improvement is driven by the augmented DB being able to claim more faces as known identities, reducing the number of "None" predictions (some of which were false classifying known faces as None)
 
-### 12.2 Per-Class PR Curves: Baseline vs. Best Configuration
+### 12.2 Per-Class Performance Metrics: Baseline vs. Best Configuration
 
-Detailed per-class PR curves comparing baseline (no augmentation) against the best configuration (t=0.4, n=300):
+The following tables present all evaluation metrics per class for the baseline (no augmentation) and the best configuration (t=0.4, n=300).
+
+#### Baseline (no augmentation)
+
+| Class | Accuracy | Precision | Recall | F-β(0.4) | ROC-AUC | R@P=0.95 |
+|-------|----------|-----------|--------|----------|---------|----------|
+| Donald Trump | 0.9564 | 0.9733 | 0.8319 | 0.9510 | 0.9703 | 0.9231 |
+| Giorgia Meloni | 0.9707 | 1.0000 | 0.8714 | 0.9801 | 0.9570 | 0.9000 |
+| Hugh Jackman | 0.9674 | 0.9961 | 0.8388 | 0.9710 | 0.8997 | 0.8750 |
+| Lionel Messi | 0.9557 | 1.0000 | 0.8157 | 0.9698 | 0.9421 | 0.8699 |
+| None | 0.8581 | 0.5116 | 0.9649 | 0.5471 | 0.9299 | 0.0000 |
+| **Macro** | **0.9417** | **0.8962** | **0.8646** | **0.8838** | **0.9398** | **0.7136** |
+
+#### Best Configuration (t=0.4, n=300)
+
+| Class | Accuracy | Precision | Recall | F-β(0.4) | ROC-AUC | R@P=0.95 |
+|-------|----------|-----------|--------|----------|---------|----------|
+| Donald Trump | 0.9798 | 0.9651 | 0.9459 | 0.9624 | 0.9697 | 0.9544 |
+| Giorgia Meloni | 0.9766 | 0.9968 | 0.9000 | 0.9823 | 0.9519 | 0.9057 |
+| Hugh Jackman | 0.9733 | 0.9925 | 0.8717 | 0.9739 | 0.8846 | 0.8750 |
+| Lionel Messi | 0.9674 | 1.0000 | 0.8645 | 0.9788 | 0.9372 | 0.8916 |
+| None | 0.9017 | 0.6091 | 0.9430 | 0.6403 | 0.9283 | 0.0000 |
+| **Macro** | **0.9598** | **0.9127** | **0.9050** | **0.9075** | **0.9343** | **0.7253** |
+
+#### Delta: Best Configuration vs. Baseline
+
+| Class | Δ Accuracy | Δ Precision | Δ Recall | Δ F-β(0.4) | Δ ROC-AUC | Δ R@P=0.95 |
+|-------|-----------|------------|---------|-----------|----------|-----------|
+| Donald Trump | +0.0234 | −0.0082 | +0.1140 | +0.0114 | −0.0006 | +0.0313 |
+| Giorgia Meloni | +0.0059 | −0.0032 | +0.0286 | +0.0022 | −0.0051 | +0.0057 |
+| Hugh Jackman | +0.0059 | −0.0036 | +0.0329 | +0.0029 | −0.0151 | +0.0000 |
+| Lionel Messi | +0.0117 | +0.0000 | +0.0488 | +0.0090 | −0.0049 | +0.0217 |
+| None | +0.0436 | +0.0975 | −0.0219 | +0.0932 | −0.0016 | +0.0000 |
+| **Macro** | **+0.0181** | **+0.0165** | **+0.0405** | **+0.0238** | **−0.0055** | **+0.0117** |
+
+Key observations:
+- **Donald Trump** benefits most in recall (+0.1140) and R@P=0.95 (+0.0313), with only a minor precision trade-off (−0.0082).
+- **Giorgia Meloni** maintains near-perfect performance at both states, with modest recall (+0.0286) and R@P=0.95 (+0.0057) improvements.
+- **Hugh Jackman** shows consistent recall gains (+0.0329) and stable R@P=0.95; the slight ROC-AUC decrease (−0.0151) suggests a small number of noisy augmented embeddings.
+- **Lionel Messi** improves substantially in recall (+0.0488) and R@P=0.95 (+0.0217) while maintaining perfect precision (1.0000).
+- **None class** achieves the largest F-β gain (+0.0932), reflecting a dramatic precision improvement (+0.0975) as the augmented reference database better identifies known individuals. R@P=0.95 remains at 0.0000 for both configurations because the system cannot simultaneously achieve 95% precision and high recall for the "None" class at this identification threshold.
+
+**Per-Class PR-AUC Comparison:**
 
 | Class | Baseline PR-AUC | Best Config PR-AUC | Change |
 |-------|----------------|--------------------|--------|
 | Donald Trump | 0.9552 | 0.9619 | +0.0067 |
-| Giorgia Meloni | 0.9474 | 0.9460 | -0.0014 |
-| Hugh Jackman | 0.9040 | 0.8872 | -0.0168 |
+| Giorgia Meloni | 0.9474 | 0.9460 | −0.0014 |
+| Hugh Jackman | 0.9040 | 0.8872 | −0.0168 |
 | Lionel Messi | 0.9364 | 0.9377 | +0.0013 |
 | None | 0.5826 | 0.6092 | +0.0266 |
 
-The PR-AUC changes are relatively small in magnitude but directionally consistent: augmentation provides the largest absolute improvement to the "None" class (+0.0266) and to Donald Trump (+0.0067). Hugh Jackman experiences a slight decrease (-0.0168), suggesting that some augmented Hugh Jackman embeddings may be slightly noisy.
+The PR-AUC changes are relatively small in magnitude but directionally consistent: augmentation provides the largest absolute improvement to the "None" class (+0.0266) and to Donald Trump (+0.0067). Hugh Jackman experiences a slight decrease (−0.0168), suggesting that some augmented Hugh Jackman embeddings may be slightly noisy.
 
 ---
 

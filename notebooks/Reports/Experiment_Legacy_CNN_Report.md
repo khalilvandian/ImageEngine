@@ -309,9 +309,12 @@ The experiment computes the following metrics, all identical to the InsightFace 
 
 #### Aggregate Metrics
 
+Primary required aggregate set (macro in all cases): **Accuracy**, **Precision**, **Recall**, **F0.4**, **ROC AUC**, **R@P=0.95**.
+
 | Metric | Definition |
 |--------|------------|
 | **Subset Accuracy** | Fraction of images where the predicted label set *exactly* matches the ground-truth label set. The strictest multi-label accuracy measure. |
+| **Accuracy (macro)** | Mean one-vs-rest accuracy across classes (macro average). |
 | **F-beta (macro)** | F-beta score averaged across classes (unweighted). With β = 0.4, precision is weighted ~7.25× more than recall. |
 | **F-beta (micro)** | F-beta score computed globally across all class–sample pairs. |
 | **Precision (macro/micro)** | Fraction of positive predictions that are correct. |
@@ -322,7 +325,9 @@ The experiment computes the following metrics, all identical to the InsightFace 
 
 #### Per-Class Metrics
 
-For each class (each identity plus "None"), the notebook computes: True Positives (TP), False Positives (FP), False Negatives (FN), True Negatives (TN), Precision, Recall, F-beta, ROC-AUC, P@R=0.95, and R@P=0.95.
+Primary required per-class set: **Accuracy**, **Precision**, **Recall**, **F0.4**, **ROC AUC**, **R@P=0.95**.
+
+For each class (each identity plus "None"), the notebook computes: True Positives (TP), False Positives (FP), False Negatives (FN), True Negatives (TN), **Accuracy**, Precision, Recall, F-beta (β=0.4, i.e., F0.4), ROC-AUC, P@R=0.95, and R@P=0.95.
 
 The "None" class receives special treatment for score computation: its score is defined as `1 - max(similarity scores)`. This means an image receives a high "None" score when no reference identity matches well, which is the correct behaviour for a class representing the absence of known identities.
 
@@ -386,13 +391,15 @@ The CNN pipeline evaluation on the 1,536-image dataset yielded the following ove
 
 | Metric | Value |
 |--------|-------|
+| **Accuracy (macro)** | 0.8116 |
 | **Subset Accuracy** | 0.4967 |
-| **F-beta (macro, β=0.4)** | 0.5466 |
+| **F0.4 (macro)** | 0.5466 |
 | **F-beta (micro, β=0.4)** | 0.5553 |
 | **Precision (macro)** | 0.5300 |
 | **Precision (micro)** | 0.5365 |
 | **Recall (macro)** | 0.6983 |
 | **Recall (micro)** | 0.7116 |
+| **ROC AUC (macro)** | 0.8316 |
 | **P@R=0.95 (macro)** | 0.2700 |
 | **P@R=0.95 (micro)** | 0.2115 |
 | **R@P=0.95 (macro)** | 0.5172 |
@@ -417,15 +424,15 @@ The CNN pipeline evaluation on the 1,536-image dataset yielded the following ove
 
 ### 8.2 Per-Class Performance
 
-The per-class metrics reveal dramatically different performance profiles across the five classes:
+The per-class metrics reveal dramatically different performance profiles across the five classes. The required per-class set (Accuracy, Precision, Recall, F0.4, ROC AUC, R@P=0.95) is explicitly reported below:
 
-| Class | Precision | Recall | F-beta (β=0.4) | ROC-AUC | P@R=0.95 | R@P=0.95 | TP | FP | FN | TN |
-|-------|-----------|--------|-----------------|---------|----------|----------|----|----|----|-----|
-| **Donald Trump** | 0.4991 | 0.7521 | 0.5233 | 0.7857 | 0.2282 | 0.5527 | 264 | 265 | 87 | 920 |
-| **Giorgia Meloni** | 0.5446 | 0.6800 | 0.5600 | 0.7813 | 0.2299 | 0.5829 | 238 | 199 | 112 | 987 |
-| **Hugh Jackman** | 0.5528 | 0.8947 | 0.5836 | 0.9426 | 0.3379 | 0.8191 | 272 | 220 | 32 | 1012 |
-| **Lionel Messi** | 0.6995 | 0.7127 | 0.7013 | 0.8228 | 0.2433 | 0.6314 | 263 | 113 | 106 | 1054 |
-| **None** | 0.3540 | 0.4518 | 0.3648 | 0.8259 | 0.3109 | 0.0000 | 103 | 188 | 125 | 1120 |
+| Class | Accuracy | Precision | Recall | F0.4 | ROC-AUC | P@R=0.95 | R@P=0.95 | TP | FP | FN | TN |
+|-------|----------|-----------|--------|------|---------|----------|----------|----|----|----|-----|
+| **Donald Trump** | 0.7708 | 0.4991 | 0.7521 | 0.5233 | 0.7857 | 0.2282 | 0.5527 | 264 | 265 | 87 | 920 |
+| **Giorgia Meloni** | 0.7975 | 0.5446 | 0.6800 | 0.5600 | 0.7813 | 0.2299 | 0.5829 | 238 | 199 | 112 | 987 |
+| **Hugh Jackman** | 0.8359 | 0.5528 | 0.8947 | 0.5836 | 0.9426 | 0.3379 | 0.8191 | 272 | 220 | 32 | 1012 |
+| **Lionel Messi** | 0.8574 | 0.6995 | 0.7127 | 0.7013 | 0.8228 | 0.2433 | 0.6314 | 263 | 113 | 106 | 1054 |
+| **None** | 0.7962 | 0.3540 | 0.4518 | 0.3648 | 0.8259 | 0.3109 | 0.0000 | 103 | 188 | 125 | 1120 |
 
 #### Per-Class Observations
 

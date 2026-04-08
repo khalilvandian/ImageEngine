@@ -165,14 +165,16 @@ The baseline InsightFace evaluation yields the following overall performance met
 
 | Metric | Macro-Averaged | Micro-Averaged |
 |---|---|---|
-| **Subset Accuracy** | 0.8516 | — |
-| **F-beta (β=0.4)** | 0.8838 | 0.8617 |
+| **Accuracy (Subset / Exact Match)** | 0.8516 | — |
+| **Accuracy (Per-Class Binary, Macro Avg.)** | 0.9417 | — |
 | **Precision** | 0.8962 | 0.8624 |
 | **Recall** | 0.8646 | 0.8571 |
-| **Precision@Recall=0.95** | 0.4613 | 0.2824 |
-| **Recall@Precision=0.95** | 0.7136 | 0.0000 |
+| **F-beta (β=0.4)** | 0.8838 | 0.8617 |
+| **ROC AUC** | 0.9384 | 0.8789 |
+| **Recall@Precision=0.95 (R@P=0.95)** | 0.7136 | 0.0000 |
+| **Precision@Recall=0.95 (P@R=0.95)** | 0.4613 | 0.2824 |
 
-The subset accuracy of 85.16% indicates that for the majority of images, the model's predicted set of identities exactly matches the ground truth. The high macro-averaged precision (89.62%) and recall (86.46%) demonstrate strong performance across individual classes. The F-beta score of 0.8838 (precision-weighted) confirms that the model's precision advantage is well-captured.
+The subset (exact-match) accuracy of 85.16% indicates that for the majority of images the predicted label set exactly matches the ground truth. The macro-averaged per-class binary accuracy of **0.9417** measures classification correctness per class and then averages equally across all five classes. The high macro-averaged precision (89.62%) and recall (86.46%) demonstrate strong performance across individual classes. The F-beta score of 0.8838 (precision-weighted) confirms the model's precision advantage, and the macro-averaged ROC AUC of **0.9384** confirms excellent overall discriminative ability.
 
 ### 6.2 Face Detection and Identification Statistics
 

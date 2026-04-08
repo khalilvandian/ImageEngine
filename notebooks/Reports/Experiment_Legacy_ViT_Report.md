@@ -330,7 +330,14 @@ A prediction of `{"Donald Trump", "None"}` for this image would be partially cor
 
 ### 6.6 Metrics Definitions
 
-The following metrics are computed at both macro-averaged and micro-averaged levels:
+The notebook computes a broad evaluation suite, but the primary report summary surfaces the following required metrics:
+
+- **Aggregated metrics (macro in all cases)**: Accuracy, Precision, Recall, F0.4, ROC-AUC, and R@P=0.95
+- **Per-class metrics**: Accuracy, Precision, Recall, F0.4, ROC-AUC, and R@P=0.95
+
+Additional supporting metrics such as subset accuracy, micro-averaged scores, P@R=0.95, and confusion values are still discussed where they help interpret model behaviour.
+
+The following metrics are computed at both macro-averaged and micro-averaged levels unless otherwise noted:
 
 | Metric | Definition | Significance |
 |--------|-----------|--------------|
@@ -409,15 +416,30 @@ The `compute_full_metrics()` function takes the raw evaluation results and compu
 
 The ViT-B/32 evaluation on the 1,536-image dataset produces the following overall performance metrics:
 
+#### 8.1.1 Required Aggregated Metrics (Macro)
+
+| Metric | Value |
+|--------|-------|
+| Accuracy (macro) | 0.8000 |
+| Precision (macro) | 0.5528 |
+| Recall (macro) | 0.7260 |
+| F0.4 (macro) | 0.5565 |
+| ROC-AUC (macro) | 0.8769 |
+| R@P=0.95 (macro) | 0.4923 |
+
+For completeness, the broader notebook output also reports the following supporting metrics:
+
 | Metric | Value |
 |--------|-------|
 | **Subset Accuracy** | **0.4408** |
+| Accuracy (macro) | 0.8000 |
 | F-beta (macro, β=0.4) | 0.5565 |
 | F-beta (micro, β=0.4) | 0.5386 |
 | Precision (macro) | 0.5528 |
 | Precision (micro) | 0.5140 |
 | Recall (macro) | 0.7260 |
 | Recall (micro) | 0.7684 |
+| ROC-AUC (macro) | 0.8769 |
 | P@R=0.95 (macro) | 0.3006 |
 | P@R=0.95 (micro) | 0.2363 |
 | R@P=0.95 (macro) | 0.4923 |
@@ -430,15 +452,15 @@ Perhaps the most revealing statistic is the **identification rate of 100%**. Eve
 
 This 100% identification rate is the root cause of the model's poor precision: the system is aggressively matching every detected face to one of the four known identities, generating massive numbers of false positives — particularly for images containing bystanders and crowd faces that should be classified as unknown.
 
-#### 8.1.1 Macro vs. Micro Metric Divergence
+#### 8.1.2 Macro vs. Micro Metric Divergence
 
 The gap between macro and micro metrics is relatively modest (F-beta: 0.5565 macro vs. 0.5386 micro; precision: 0.5528 macro vs. 0.5140 micro), indicating that the ViT model's weaknesses are fairly uniform across classes rather than concentrated in one class. This contrasts with the InsightFace baseline where the "None" class was the primary driver of macro-micro divergence.
 
-#### 8.1.2 Recall vs. Precision Imbalance
+#### 8.1.3 Recall vs. Precision Imbalance
 
 The recall metrics (macro: 0.7260, micro: 0.7684) are notably higher than the precision metrics (macro: 0.5528, micro: 0.5140). This asymmetry is a direct consequence of the 100% identification rate: by aggressively assigning identities, the model catches most true positives (high recall) but also generates many false positives (low precision). For a face recognition system where β = 0.4 emphasises precision, this recall-over-precision profile is particularly problematic.
 
-#### 8.1.3 Threshold-Dependent Metrics
+#### 8.1.4 Threshold-Dependent Metrics
 
 The **P@R=0.95 (macro)** of 0.3006 means that when the model is forced to detect 95% of all true positives, the precision drops to just 30% — meaning 70% of predictions at that recall level are false positives. The **R@P=0.95 (micro)** of exactly 0.0000 indicates that the pooled system can never achieve 95% precision at any non-zero recall level — the false positive contamination from aggressive matching is too severe to achieve high-precision operation.
 
@@ -448,13 +470,13 @@ The **R@P=0.95 (macro)** of 0.4923 is more encouraging: on average across indivi
 
 The per-class metrics table reveals dramatically different performance profiles across the five classes:
 
-| Class | Precision | Recall | F-beta (β=0.4) | ROC-AUC | P@R=0.95 | R@P=0.95 | TP | FP | FN | TN |
-|-------|-----------|--------|-----------------|---------|----------|----------|----|----|----|----|
-| Donald Trump | 0.5354 | 0.9060 | 0.5674 | 0.9457 | 0.4491 | 0.7977 | 318 | 276 | 33 | 909 |
-| Giorgia Meloni | 0.6343 | 0.8971 | 0.6611 | 0.9280 | 0.3174 | 0.7343 | 314 | 181 | 36 | 1005 |
-| Hugh Jackman | 0.7556 | 0.6711 | 0.7427 | 0.8590 | 0.1944 | 0.6151 | 204 | 66 | 100 | 1166 |
-| Lionel Messi | 0.3711 | 0.9322 | 0.4047 | 0.8063 | 0.2731 | 0.3144 | 344 | 583 | 25 | 584 |
-| None | 0.4679 | 0.2237 | 0.4067 | 0.8455 | 0.2689 | 0.0000 | 51 | 58 | 177 | 1250 |
+| Class | Accuracy | Precision | Recall | F0.4 | ROC-AUC | R@P=0.95 | TP | FP | FN | TN |
+|-------|----------|-----------|--------|------|---------|----------|----|----|----|----|
+| Donald Trump | 0.7988 | 0.5354 | 0.9060 | 0.5674 | 0.9457 | 0.7977 | 318 | 276 | 33 | 909 |
+| Giorgia Meloni | 0.8587 | 0.6343 | 0.8971 | 0.6611 | 0.9280 | 0.7343 | 314 | 181 | 36 | 1005 |
+| Hugh Jackman | 0.8919 | 0.7556 | 0.6711 | 0.7427 | 0.8590 | 0.6151 | 204 | 66 | 100 | 1166 |
+| Lionel Messi | 0.6042 | 0.3711 | 0.9322 | 0.4047 | 0.8063 | 0.3144 | 344 | 583 | 25 | 584 |
+| None | 0.8464 | 0.4679 | 0.2237 | 0.4067 | 0.8455 | 0.0000 | 51 | 58 | 177 | 1250 |
 
 #### 8.2.1 Confusion Matrix Summary
 

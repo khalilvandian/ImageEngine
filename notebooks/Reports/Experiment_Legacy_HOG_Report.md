@@ -57,9 +57,12 @@ The evaluation, executed on 15 February 2026, yielded the following headline res
 | Metric | Value |
 |--------|------:|
 | **Subset Accuracy** | 0.4616 |
-| **F-beta (macro, β=0.4)** | 0.5197 |
+| **Accuracy (macro)** | 0.7918 |
 | **Precision (macro)** | 0.5059 |
 | **Recall (macro)** | 0.6508 |
+| **F-beta (macro, β=0.4)** | 0.5197 |
+| **ROC AUC (macro)** | 0.7661 |
+| **R@P=0.95 (macro)** | 0.4774 |
 | **Identification Rate** | 1.0000 |
 | **Total faces detected** | 2,238 |
 | **No-face images** | 415 (27%) |
@@ -373,12 +376,14 @@ The following table presents all aggregate (overall) metrics from the evaluation
 | Metric | Value | Assessment |
 |--------|------:|------------|
 | **Subset Accuracy** | 0.4616 | Below 50% — fewer than half of all images had exact-match predictions |
+| **Accuracy (macro)** | 0.7918 | Average per-class accuracy — weighted by class balance across binary decisions |
 | **F-beta (macro, β=0.4)** | 0.5197 | Moderate; precision-weighted score reflects frequent false positives |
 | **F-beta (micro, β=0.4)** | 0.5176 | Very close to macro — no single class dramatically skews micro |
 | **Precision (macro)** | 0.5059 | Approximately coin-flip precision — half of positive predictions are correct |
 | **Precision (micro)** | 0.5007 | Consistent with macro; system-wide, 50% of predictions are wrong |
 | **Recall (macro)** | 0.6508 | Reasonable — roughly two-thirds of true positives are recovered |
 | **Recall (micro)** | 0.6554 | Consistent with macro; ~65% of actual positives captured |
+| **ROC AUC (macro)** | 0.7661 | Average discrimination ability across all classes — moderate ranking quality |
 | **P@R=0.95 (macro)** | 0.2428 | Very low — to reach 95% recall, precision drops to ~24% |
 | **P@R=0.95 (micro)** | 0.2097 | Even worse at the micro level — ~21% precision at 95% recall |
 | **R@P=0.95 (macro)** | 0.4774 | At 95% precision, only ~48% recall is achievable (macro average) |
@@ -398,13 +403,13 @@ The following table presents all aggregate (overall) metrics from the evaluation
 
 The per-class breakdown reveals substantial variation across identities:
 
-| Class | Precision | Recall | F-beta (β=0.4) | ROC-AUC | P@R=0.95 | R@P=0.95 | TP | FP | FN | TN |
-|-------|----------:|-------:|----------------:|--------:|---------:|---------:|---:|---:|---:|---:|
-| **Donald Trump** | 0.4644 | 0.6125 | 0.4804 | 0.6600 | 0.2257 | 0.4245 | 215 | 248 | 136 | 937 |
-| **Giorgia Meloni** | 0.5444 | 0.6486 | 0.5567 | 0.7450 | 0.2298 | 0.5886 | 227 | 190 | 123 | 996 |
-| **Hugh Jackman** | 0.5546 | 0.8191 | 0.5804 | 0.8730 | 0.2145 | 0.7993 | 249 | 200 | 55 | 1,032 |
-| **Lionel Messi** | 0.6771 | 0.6477 | 0.6728 | 0.7639 | 0.2435 | 0.5745 | 239 | 114 | 130 | 1,053 |
-| **None** | 0.2892 | 0.5263 | 0.3083 | 0.7885 | 0.3006 | 0.0000 | 120 | 295 | 108 | 1,013 |
+| Class | Accuracy | Precision | Recall | F-beta (β=0.4) | ROC-AUC | P@R=0.95 | R@P=0.95 | TP | FP | FN | TN |
+|-------|--------:|----------:|-------:|----------------:|--------:|---------:|---------:|---:|---:|---:|---:|
+| **Donald Trump** | 0.7500 | 0.4644 | 0.6125 | 0.4804 | 0.6600 | 0.2257 | 0.4245 | 215 | 248 | 136 | 937 |
+| **Giorgia Meloni** | 0.7962 | 0.5444 | 0.6486 | 0.5567 | 0.7450 | 0.2298 | 0.5886 | 227 | 190 | 123 | 996 |
+| **Hugh Jackman** | 0.8340 | 0.5546 | 0.8191 | 0.5804 | 0.8730 | 0.2145 | 0.7993 | 249 | 200 | 55 | 1,032 |
+| **Lionel Messi** | 0.8411 | 0.6771 | 0.6477 | 0.6728 | 0.7639 | 0.2435 | 0.5745 | 239 | 114 | 130 | 1,053 |
+| **None** | 0.7376 | 0.2892 | 0.5263 | 0.3083 | 0.7885 | 0.3006 | 0.0000 | 120 | 295 | 108 | 1,013 |
 
 #### Per-Class Analysis
 
@@ -500,12 +505,14 @@ Configuration:
   OVERALL METRICS
 ──────────────────────────────────────────────────────────────────────────────────────────
   Subset Accuracy                          0.4616
+  Accuracy (macro)                         0.7918
   F-beta (macro, β=0.4)                    0.5197
   F-beta (micro, β=0.4)                    0.5176
   Precision (macro)                        0.5059
   Precision (micro)                        0.5007
   Recall (macro)                           0.6508
   Recall (micro)                           0.6554
+  ROC AUC (macro)                          0.7661
   P@R=0.95 (macro)                         0.2428
   P@R=0.95 (micro)                         0.2097
   R@P=0.95 (macro)                         0.4774
